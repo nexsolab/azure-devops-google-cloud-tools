@@ -1,0 +1,142 @@
+{
+  "manifestVersion": 1,
+  "id": "azure-devops-google-cloud-tools",
+  "publisher": "nexso",
+  "version": "1.0.0",
+  "name": "Google Cloud tools for Azure DevOps Pipelines",
+  "scopes": ["vso.build", "vso.build_execute", "vso.release"],
+  "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy do App Services",
+  "public": false,
+  "categories": ["Azure Pipelines"],
+  "icons": {
+    "default": "images/gcp.png"
+  },
+  "tags": [
+    "gcloud",
+    "cli",
+    "google cloud",
+    "google cloud platform",
+    "gcp",
+    "app services"
+  ],
+  "targets": [
+    {
+      "id": "Microsoft.VisualStudio.Services"
+    }
+  ],
+  "contributions": [
+    {
+      "id": "GCPCLIInstall",
+      "description": "Run an gcloud CLI command against an GCP connection",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+          "name": "Tasks/GCPCLIInstall"
+      }
+    },
+    {
+      "id": "GCPCLI",
+      "description": "Run an gcloud CLI command against an GCP connection",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+          "name": "Tasks/GCPCLI"
+      }
+    },
+    {
+        "id": "GCPPowerShellModuleScript",
+        "description": "Run a PowerShell script that uses cmdlets from the GCP Tools for Windows PowerShell module.",
+        "type": "ms.vss-distributed-task.task",
+        "targets": ["ms.vss-distributed-task.tasks"],
+        "properties": {
+            "name": "Tasks/GCPPowerShellModuleScript"
+        }
+    },
+    {
+        "id": "GCPShellScript",
+        "description": "Run a shell script using Bash with GCP credentials.",
+        "type": "ms.vss-distributed-task.task",
+        "targets": ["ms.vss-distributed-task.tasks"],
+        "properties": {
+            "name": "Tasks/GCPShellScript"
+        }
+    },
+    {
+      "id": "GCPDeployFunction",
+      "description": "General purpose deployment for Google Cloud functions",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+          "name": "Tasks/GCPDeployFunction"
+      }
+    },
+    {
+      "id": "GCPAppServiceDeploy",
+      "description": "Deploy an app to the App Services",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+          "name": "Tasks/GCPAppServiceDeploy"
+      }
+    }
+  ],
+  "links": {
+    "getstarted": {
+        "uri": "https://aws.amazon.com/vsts?referer=vsmarketplace"
+    },
+    "license": {
+        "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/blob/master/LICENSE"
+    },
+    "support": {
+        "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools"
+  },
+  "branding": {
+      "color": "rgb(220, 235, 252)",
+      "theme": "light"
+  },
+  "galleryFlags": [],
+  "screenshots": [
+      {
+          "path": "images/screenshot.png"
+      }
+  ],
+  "content": {
+    "details": {
+        "path": "README.md"
+    },
+    "license": {
+        "path": "LICENSE"
+    }
+  },
+  "files": [
+    {
+      "path": "images",
+      "addressable": true
+    },
+    {
+      "path": "node_modules/vss-web-extension-sdk/lib",
+      "addressable": true,
+      "packagePath": "lib"
+    },
+    {
+        "path": "Tasks/GCPCLI"
+    },
+    {
+        "path": "Tasks/GCPPowerShellModuleScript"
+    },
+    {
+        "path": "Tasks/GCPShellScript"
+    },
+    {
+        "path": "Tasks/GCPDeployFunction"
+    },
+    {
+        "path": "Tasks/GCPAppServiceDeploy"
+    }
+  ]
+}

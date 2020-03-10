@@ -1,0 +1,45 @@
+{
+  "name": "azure-devops-google-cloud-tools",
+  "version": "1.0.0",
+  "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy do App Services",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexsolab/azure-devops-google-cloud-tools.git"
+  },
+  "keywords": [
+    "azure",
+    "devops",
+    "pipelines",
+    "release",
+    "gcloud",
+    "cli",
+    "google",
+    "cloud",
+    "platform",
+    "gcp",
+    "deploy",
+    "task",
+    "iac"
+  ],
+  "author": "Gabriel Anderson",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
+  },
+  "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools#readme",
+  "dependencies": {
+    "azure-pipelines-task-lib": "^2.9.3",
+    "azure-pipelines-tool-lib": "^0.12.0",
+    "typed-rest-client": "^1.7.2",
+    "vss-web-extension-sdk": "^5.141.0"
+  },
+  "devDependencies": {
+    "@types/node": "^13.9.0",
+    "@types/q": "^1.5.2",
+    "sync-request": "^6.1.0"
+  }
+}

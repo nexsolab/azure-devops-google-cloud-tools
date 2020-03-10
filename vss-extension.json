@@ -1,0 +1,76 @@
+{
+  "manifestVersion": 1,
+  "id": "azure-devops-google-cloud-tools",
+  "publisher": "nexso",
+  "version": "1.0.0",
+  "name": "Google Cloud tools for Azure DevOps Pipelines",
+  "scopes": ["vso.build", "vso.build_execute", "vso.release"],
+  "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy do App Services",
+  "public": false,
+  "categories": ["Azure Pipelines"],
+  "icons": {
+    "default": "images/gcp.png"
+  },
+  "tags": [
+    "gcloud",
+    "cli",
+    "google cloud",
+    "google cloud platform",
+    "gcp",
+    "app services"
+  ],
+  "targets": [
+    {
+      "id": "Microsoft.VisualStudio.Services"
+    }
+  ],
+  "contributions": [
+    {
+      "id": "GoogleCloudSdkTool",
+      "description": "Run an gcloud CLI command against an GCP connection",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+          "name": "Tasks/GoogleCloudSdkTool"
+      }
+    }
+  ],
+  "links": {
+    "getstarted": {
+        "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools#readme"
+    },
+    "license": {
+        "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/blob/master/LICENSE"
+    },
+    "support": {
+        "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools"
+  },
+  "branding": {
+      "color": "rgb(220, 235, 252)",
+      "theme": "light"
+  },
+  "galleryFlags": [],
+  "screenshots": [],
+  "content": {
+    "details": {
+        "path": "README.md"
+    },
+    "license": {
+        "path": "LICENSE"
+    }
+  },
+  "files": [
+    {
+      "path": "images",
+      "addressable": true
+    },
+    {
+        "path": "Tasks/GoogleCloudSdkTool"
+    }
+  ]
+}
