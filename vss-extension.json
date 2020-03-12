@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "azure-devops-google-cloud-tools",
   "publisher": "nexso",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "name": "Google Cloud tools for Azure DevOps Pipelines",
   "scopes": ["vso.build", "vso.build_execute", "vso.release"],
   "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy do App Services",
@@ -70,7 +70,7 @@
       "addressable": true
     },
     {
-        "path": "Tasks/GoogleCloudSdkTool"
+        "path": "Tasks/GoogleCloudSdkTool/dist"
     }
   ]
 }

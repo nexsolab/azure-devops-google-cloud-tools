@@ -22,7 +22,7 @@ tmr.registerMock('azure-pipelines-tool-lib/tool', {
     return version.replace(/^v/i, "");
   },
   findLocalTool: function (toolName, versionSpec) {
-    assert(versionSpec === "v283.0.0", "Version returned should begin with 'v'");
+    assert(/[0-9]{3}\.[0-9]{1}\.[0-9]{1}/.test(versionSpec), `Version returned should like ###.#.# - founded ${versionSpec}`);
     return "/path/to/gcloud";
   },
   prependPath(toolPath) {

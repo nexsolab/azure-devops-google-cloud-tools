@@ -4,7 +4,10 @@
   "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy do App Services",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "create": "tfx extension create --manifest-globs vss-extension.json",
+    "createv": "tfx extension create --manifest-globs vss-extension.json --rev-version",
+    "share": "tfx extension publish --manifest-globs vss-extension.json --share-with nexsobr"
   },
   "repository": {
     "type": "git",
@@ -38,8 +41,6 @@
     "vss-web-extension-sdk": "^5.141.0"
   },
   "devDependencies": {
-    "@types/node": "^13.9.0",
-    "@types/q": "^1.5.2",
     "sync-request": "^6.1.0"
   }
 }

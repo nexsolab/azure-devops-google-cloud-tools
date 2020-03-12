@@ -6,6 +6,8 @@ import * as path from 'path';
 
 let osPlat: string = os.platform();
 let osArch: string = getArch();
+// Google uses x64 as x86_64
+if (osArch === 'x64') osArch = 'x86_64';
 
 async function run() {
     try {
@@ -92,7 +94,7 @@ async function getCloudSdk(versionSpec: string, checkLatest: boolean) {
 
 async function queryLatestMatch(versionSpec: string): Promise<string> {
   // get the manifest from Docker Hub
-  const rest: restm.RestClient = new restm.RestClient('vsts-node-tool');
+  const rest: restm.RestClient = new restm.RestClient('vsts-gcloud-tool');
   
   // authenticate
   const dockerAuthUrl: string = 'https://auth.docker.io/token?service=registry.docker.io&scope=repository:google/cloud-sdk:pull';
@@ -139,11 +141,11 @@ async function acquireCloudSdk(version: string): Promise<string> {
     if (osPlat == 'win32') {
         taskLib.assertAgent('2.115.0');
         extPath = taskLib.getVariable('Agent.TempDirectory');
+        
         if (!extPath) {
             throw new Error('Expected Agent.TempDirectory to be set');
         }
 
-        let _7zPath = path.join(__dirname, '7zr.exe');
         extPath = await toolLib.extractZip(downloadPath, extPath);
     }
     else {

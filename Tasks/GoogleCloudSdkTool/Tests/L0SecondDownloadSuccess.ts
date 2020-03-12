@@ -57,23 +57,18 @@ tmr.registerMock('azure-pipelines-tool-lib/tool', {
         return '280.0.0';
     },
     downloadTool(url) {
-        if (url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-280.0.0-windows-${os.arch()}.zip` ||
-            url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-280.0.0-${os.platform()}-${os.arch()}.tar.gz`) {
-            let err = new Error();
-            err['httpStatusCode'] = 404;
-            throw err;
-        }
-        else if (url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-280.0.0-windows-${os.arch()}/node.exe`) {
+        var arch = os.arch() === 'x64' ? 'x86_64' : 'x86';
+        if (url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-280.0.0-windows-${arch}.zip`) {
             return 'exe_loc';
         }
-        else if (url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-280.0.0-windows-${os.arch()}/node.lib`) {
+        else if (url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-280.0.0-${os.platform()}-${arch}.tar.gz`) {
             return 'exe_lib';
         }
         else {
-            throw new Error('Incorrect URL');
+            throw new Error(`Incorrect URL ${url} for ${os.platform()}-${arch}`);
         }
     },
-    extract7z(downloadPath, extPath, _7zPath) {
+    extractZip(downloadPath, extPath) {
         return 'extPath';
     },
     extractTar(downloadPath, extPath, _7zPath) {

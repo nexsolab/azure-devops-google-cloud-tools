@@ -4,7 +4,8 @@
   "description": "Google Cloud SDK tool installer",
   "main": "gcloudcli.js",
   "scripts": {
-    "test": "tsc && mocha Tests/L0.js"
+    "test": "mocha dist/Tests/L0.js",
+    "build": "tsc --project tsconfig.json"
   },
   "repository": {
     "type": "git",
@@ -32,14 +33,13 @@
   },
   "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools#readme",
   "dependencies": {
-    "azure-pipelines-task-lib": "^2.9.3",
-    "azure-pipelines-tool-lib": "^0.12.0",
-    "typed-rest-client": "^1.7.2"
-  },
-  "devDependencies": {
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.9.0",
     "@types/q": "^1.5.2",
-    "sync-request": "^6.1.0"
-  }
+    "azure-pipelines-task-lib": "^2.9.3",
+    "azure-pipelines-tool-lib": "^0.12.0",
+    "sync-request": "^6.1.0",
+    "typed-rest-client": "^1.7.2"
+  },
+  "devDependencies": {}
 }

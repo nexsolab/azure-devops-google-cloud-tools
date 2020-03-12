@@ -57,12 +57,13 @@ tmr.registerMock('azure-pipelines-tool-lib/tool', {
         return '283.0.0';
     },
     downloadTool(url) {
-        if (url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-283.0.0-windowns-${os.arch()}.zip` ||
-            url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-283.0.0-${os.platform()}-${os.arch()}.tar.gz`) {
+        var arch = os.arch() === 'x64' ? 'x86_64' : 'x86';
+        if (url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-283.0.0-windows-${arch}.zip` ||
+            url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-283.0.0-${os.platform()}-${arch}.tar.gz`) {
             return 'location';
         }
         else {
-            throw new Error('Incorrect URL');
+            throw new Error(`Incorrect URL ${url} for ${os.platform()}-${arch}`);
         }
     },
     extractZip(downloadPath, extPath) {

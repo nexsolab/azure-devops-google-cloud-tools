@@ -10,6 +10,7 @@ lerna-debug.log*
 [Tt]asks/**/*.js
 [Tt]ests/**/*.js
 !**/mock_node_modules/**/*.js
+*.vsix
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
