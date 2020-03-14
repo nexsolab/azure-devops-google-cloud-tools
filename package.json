@@ -4,7 +4,7 @@
   "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy do App Services",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha test --reporter mocha-junit-reporter",
     "create": "tfx extension create --manifest-globs vss-extension.json",
     "createv": "tfx extension create --manifest-globs vss-extension.json --rev-version",
     "share": "tfx extension publish --manifest-globs vss-extension.json --share-with nexsobr"
