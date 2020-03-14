@@ -4,7 +4,8 @@
   "description": "Google Cloud SDK tool installer",
   "main": "gcloudcli.js",
   "scripts": {
-    "test": "mocha dist/Tests/L0.js",
+    "test": "mocha **/L0.js",
+    "testci": "mocha **/L0.js --reporter mocha-junit-reporter",
     "build": "tsc --project tsconfig.json"
   },
   "repository": {
