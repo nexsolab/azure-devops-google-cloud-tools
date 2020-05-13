@@ -1,7 +1,7 @@
 {
   "name": "azure-devops-google-cloud-tools",
   "version": "1.0.0",
-  "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy do App Services",
+  "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy to App Services",
   "main": "index.js",
   "scripts": {
     "test": "mocha test --reporter mocha-junit-reporter",

@@ -1,10 +1,22 @@
 # Google Cloud Tools for Azure DevOps Pipelines
 
-Install gcloud CLI task for Azure DevOps Pipelines
+Google Cloud Plataform (GCP) tasks for Azure DevOps Pipelines
+(work in progress)
+
+## Tasks
+- **[Google Cloud SDK tool installer](Tasks/GoogleCloudSdkTool)**  
+Install gcloud CLI for use in all tasks or for custom commands.
+- **Deploy and manage App Service** (soon)
+- **Manage DNS records** (soon)
+- **Manage Service Endpoints** (soon)
+- **Deploy and manage Functions** (soon)
+- **Manage PubSub Topics** (soon)
+- **Manage PubSub Subscriptions** (soon)
+- **Manage Redis instances** (soon)
 
 ## Contributing
 
-This project welcomes [contributions and suggestions](docs/contribute.md).
+Any help are welcome.
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 

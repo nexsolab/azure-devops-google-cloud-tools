@@ -14,4 +14,6 @@ This should be the first step for any pipeline that needs `gcloud` CLI.
 ## How it works
 
 The script gets the compacted file from https://console.cloud.google.com/storage/browser/cloud-sdk-release for the specified version.
-If "Check for Latest Version" is checked, we get the `lastest` manifest for Docker file of the SDK from `DockerHub` and get the version from environment variables of the config key.
+If "Check for Latest Version" is checked, it will get the `lastest` manifest for Docker file of the SDK from `DockerHub` and get the version in the environment variables of the config key.
+
+The tool is cached for the specified version in your account.
