@@ -117,8 +117,7 @@
       "endpointId": "$(serviceAccount)",
       "parameters": {
         "Project": "$(gcpProject)"
-      },
-      "resultSelector": "jsonpath:$.locations[*].locationId"
+      }
     }
   ],
   "OutputVariables": [{
