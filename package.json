@@ -28,7 +28,10 @@
     "task",
     "iac"
   ],
-  "author": "Gabriel Anderson",
+  "author": {
+    "name": "Gabriel Anderson",
+    "url": "https://github.com/gcacars"
+  },
   "license": "AGPL-3.0",
   "bugs": {
     "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"

@@ -1,0 +1,38 @@
+{
+  "name": "googlecloudfunctions",
+  "version": "1.0.0",
+  "description": "Deploy code to GCP Functions or create, remove and call functions",
+  "main": "function.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions"
+  },
+  "keywords": [
+    "azure",
+    "devops",
+    "pipelines",
+    "release",
+    "gcloud",
+    "cli",
+    "google",
+    "cloud",
+    "platform",
+    "gcp",
+    "deploy",
+    "task",
+    "iac",
+    "functions"
+  ],
+  "author": {
+    "name": "Gabriel Anderson",
+    "url": "https://github.com/gcacars"
+  },
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
+  },
+  "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions#readme"
+}

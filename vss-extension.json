@@ -19,31 +19,75 @@
     "gcp",
     "app services"
   ],
-  "targets": [
-    {
-      "id": "Microsoft.VisualStudio.Services"
-    }
-  ],
-  "contributions": [
+  "targets": [{
+    "id": "Microsoft.VisualStudio.Services"
+  }],
+  "contributions": [{
+      "id": "gcp-credentials",
+      "description": "Credentials for tasks invoking Google Cloud Platform services",
+      "type": "ms.vss-endpoint.service-endpoint-type",
+      "targets": ["ms.vss-endpoint.endpoint-types"],
+      "properties": {
+        "name": "GoogleCloudServiceEndpoint",
+        "displayName": "Google Cloud Platform",
+        "authorizationUrl": "",
+        "url": {
+          "displayName": "Server Url",
+          "helpText": "Google Accounts",
+          "value": "https://accounts.google.com/o/oauth2",
+          "isVisible": "false"
+        },
+        "dataSources": [{
+          "name": "GCPListFunctionRegions",
+          "endpointUrl": "https://cloudfunctions.googleapis.com/v1/projects/$(gcpProject)/locations",
+          "resultSelector": "jsonpath:$[*].nm"
+        }],
+        "authenticationSchemes": [{
+          "type": "ms.vss-endpoint.endpoint-auth-scheme-cert",
+          "displayName": "JSON Key file contents",
+          "inputDescriptors": [{
+            "id": "certificate",
+            "name": "Json Text",
+            "description": "The contents of the json key file",
+            "inputMode": "TextArea",
+            "isConfidential": true,
+            "validation": {
+              "isRequired": true,
+              "dataType": "string"
+            }
+          }]
+        }],
+        "helpMarkDown": "[Get Json Key File](https://console.cloud.google.com/iam-admin/serviceaccounts)"
+      }
+    },
     {
       "id": "GoogleCloudSdkTool",
       "description": "Run an gcloud CLI command against an GCP connection",
       "type": "ms.vss-distributed-task.task",
       "targets": ["ms.vss-distributed-task.tasks"],
       "properties": {
-          "name": "Tasks/GoogleCloudSdkTool"
+        "name": "Tasks/GoogleCloudSdkTool"
+      }
+    },
+    {
+      "id": "GoogleCloudFunctions",
+      "description": "Deploy code to GCP Functions or create, remove and call functions",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+        "name": "Tasks/GoogleCloudFunctions"
       }
     }
   ],
   "links": {
     "getstarted": {
-        "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools#readme"
+      "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools#readme"
     },
     "license": {
-        "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/blob/master/LICENSE"
+      "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/blob/master/LICENSE"
     },
     "support": {
-        "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
+      "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
     }
   },
   "repository": {
@@ -51,26 +95,28 @@
     "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools"
   },
   "branding": {
-      "color": "rgb(220, 235, 252)",
-      "theme": "light"
+    "color": "rgb(220, 235, 252)",
+    "theme": "light"
   },
   "galleryFlags": [],
   "screenshots": [],
   "content": {
     "details": {
-        "path": "README.md"
+      "path": "README.md"
     },
     "license": {
-        "path": "LICENSE"
+      "path": "LICENSE"
     }
   },
-  "files": [
-    {
+  "files": [{
       "path": "images",
       "addressable": true
     },
     {
-        "path": "Tasks/GoogleCloudSdkTool/dist"
+      "path": "Tasks/GoogleCloudSdkTool/dist"
+    },
+    {
+      "path": "Tasks/GoogleCloudFunctions"
     }
   ]
 }
