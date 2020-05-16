@@ -36,7 +36,8 @@
       "options": {
         "serviceAccount": "Service Account (Connected Service)",
         "jsonFile": "JSON file credentials"
-      }
+      },
+      "helpMarkDown": "Authorization requires the following Google IAM permission on the specified resources:<br />cloudfunctions.functions.call<br />cloudfunctions.functions.create<br />cloudfunctions.functions.delete<br />cloudfunctions.functions.get<br />cloudfunctions.functions.sourceCodeSet"
     },
     {
       "name": "serviceAccount",
@@ -94,6 +95,23 @@
       "helpMarkDown": "Enter or select the region where this function should be created."
     },
     {
+      "name": "funcName",
+      "type": "string",
+      "label": "Function name",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "A user-defined name of the function. Function names must be unique globally."
+    },
+    {
+      "name": "funcCallData",
+      "type": "string",
+      "label": "Input to be passed to the function.",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Data could be a string or a JSON (started by [ or { chars).<br />**Note about execution:**<br />Synchronously invokes a deployed Cloud Function. To be used for testing purposes as very limited traffic is allowed. For more information on the actual limits, refer to [https://cloud.google.com/functions/quotas#rate_limits](Rate Limits).",
+      "visibleRule": "operation = call"
+    },
+    {
       "name": "funcTrigger",
       "type": "radio",
       "label": "Trigger mode",
@@ -123,7 +141,7 @@
       "groupName": "FunctionCreation",
       "defaultValue": false,
       "required": false,
-      "helpMarkDown": "If set, makes this a public function. This will allow all callers, without checking authentication.",
+      "helpMarkDown": "If set, makes this a public function. This will allow all callers, without checking authentication.<br />Check this if your service is an API or public site.",
       "visibleRule": "funcTrigger = https"
     },
     {
@@ -178,15 +196,6 @@
       "visibleRule": "funcTrigger = event"
     },
     {
-      "name": "funcName",
-      "type": "string",
-      "label": "Function name",
-      "groupName": "FunctionCreation",
-      "defaultValue": "",
-      "required": true,
-      "helpMarkDown": "A user-defined name of the function. Function names must be unique globally."
-    },
-    {
       "name": "funcDesc",
       "type": "string",
       "label": "Description",
@@ -216,7 +225,7 @@
       "defaultValue": "",
       "required": true,
       "helpMarkDown": "The ZIP file with source code for function. (max: 100MB)",
-      "visibleRule": "funcSourceMode = zip"
+      "visibleRule": "funcSourceMode = zip || operation = deploy"
     },
     {
       "name": "funcSourceRepo",
@@ -412,13 +421,27 @@
       }
     }
   ],
-  "OutputVariables": [{
-    "name": "FunctionUrl",
-    "description": "Function URL"
-  }],
+  "OutputVariables": [
+    {
+      "name": "FunctionName",
+      "description": "Function name in the format: projects/{project_id}/locations/{location_id}/functions/{function_id}"
+    },
+    {
+      "name": "FunctionUrl",
+      "description": "Function URL"
+    },
+    {
+      "name": "FunctionVersionId",
+      "description": "The version identifier of the Cloud Function. Each deployment attempt results in a new version of a function being created."
+    },
+    {
+      "name": "FunctionCallResult",
+      "description": "Result of function invocation. (if the operation = Call)"
+    }
+  ],
   "execution": {
     "Node": {
-      "target": "main.js",
+      "target": "dist/main.js",
       "argumentFormat": ""
     }
   },

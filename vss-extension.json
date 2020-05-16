@@ -116,7 +116,7 @@
       "path": "Tasks/GoogleCloudSdkTool/dist"
     },
     {
-      "path": "Tasks/GoogleCloudFunctions"
+      "path": "Tasks/GoogleCloudFunctions/dist"
     }
   ]
 }

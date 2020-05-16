@@ -4,7 +4,8 @@
   "description": "Deploy code to GCP Functions or create, remove and call functions",
   "main": "function.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx babel ./src --out-dir dist --source-maps --copy-files --no-copy-ignored --ignore node_modules/**/*.js"
   },
   "repository": {
     "type": "git",
@@ -39,6 +40,34 @@
     "azure-pipelines-task-lib": "^2.9.5",
     "googleapis": "^51.0.0",
     "node-fetch": "^2.6.0",
+    "return-deep-diff": "^0.4.0",
     "securefiles-common": "file:securefiles-common.tar"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "6.11"
+          }
+        }
+      ]
+    ],
+    "plugins": [],
+    "env": {
+      "debug": {
+        "sourceMaps": "inline",
+        "retainLines": true
+      }
+    }
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.9.6",
+    "@babel/node": "^7.8.7",
+    "@babel/polyfill": "^7.8.7",
+    "@babel/preset-env": "^7.9.6",
+    "babel-eslint": "^10.1.0"
   }
 }
