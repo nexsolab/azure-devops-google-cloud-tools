@@ -5,7 +5,7 @@
   "main": "function.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx babel ./src --out-dir dist --source-maps --copy-files --no-copy-ignored --ignore node_modules/**/*.js"
+    "build": "npx babel src --out-dir dist --source-maps --copy-files --no-copy-ignored --ignore node_modules/**/*.js"
   },
   "repository": {
     "type": "git",
