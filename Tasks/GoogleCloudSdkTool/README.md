@@ -1,4 +1,4 @@
-![Build status](https://dev.azure.com/nexsobr/nexso/_apis/build/status/Tools/AzureDevOps.GoogleCloudSdkTool?branchName=master)
+![Build status](https://dev.azure.com/nexsobr/Nexso%20Agile%20Team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.TaskCloudSdk)
 
 # Google Cloud SDK tool installer
 
