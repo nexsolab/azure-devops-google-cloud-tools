@@ -155,7 +155,7 @@ async function getCreateResquestBody(location, name) {
   }
 
   // Get source mode
-  const sourceMode = taskLib.getInput('funcHttpsUrl', false) || 'zip';
+  const sourceMode = taskLib.getInput('funcSourceMode', false) || 'zip';
 
   switch (sourceMode) {
     case 'storage': {
@@ -392,16 +392,47 @@ async function callFunction(location, name) {
  * @param {String} name Function name
  */
 async function deployFunction(location, name) {
-  const zipPath = taskLib.getPathInput('funcSourceZip', true, true);
-  taskLib.debug(`Using Zip file ${zipPath} as the source code.`);
-
-  const res = await cloudFunctions.projects.locations.functions.patch({
+  const request = {
     name: `${location}/functions/${name}`,
-    updateMask: 'sourceUploadUrl',
-    requestBody: {
-      sourceUploadUrl: await uploadFile(location, zipPath),
-    },
-  });
+    updateMask: '',
+    requestBody: {},
+  };
+
+  // Get source mode
+  const sourceMode = taskLib.getInput('deploySourceMode', false) || 'zip';
+
+  switch (sourceMode) {
+    case 'storage': {
+      const storagePath = taskLib.getInput('deploySourceArchive', false);
+      taskLib.debug(`Using Google Storage Zip file as source code at ${storagePath}`);
+      request.requestBody.sourceArchiveUrl = storagePath;
+      request.updateMask = 'sourceArchiveUrl';
+      break;
+    }
+
+    case 'repo': {
+      const sourceRepo = taskLib.getInput('deploySourceRepo', false);
+      taskLib.debug(`Using Google Repository as source code at ${sourceRepo}`);
+      request.requestBody.sourceRepository = {
+        url: sourceRepo,
+      };
+      request.updateMask = 'sourceRepository.url';
+      break;
+    }
+
+    case 'zip': {
+      const zipPath = taskLib.getPathInput('deploySourceZip', true, true);
+      taskLib.debug(`Using Zip file ${zipPath} as the source code.`);
+      request.requestBody.sourceUploadUrl = await uploadFile(location, zipPath);
+      request.updateMask = 'sourceUploadUrl';
+      break;
+    }
+
+    default:
+      break;
+  }
+
+  const res = await cloudFunctions.projects.locations.functions.patch(request);
 
   if (!res.data || !res.data.done) {
     taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);

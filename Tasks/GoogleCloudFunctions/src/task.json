@@ -225,7 +225,7 @@
       "defaultValue": "",
       "required": true,
       "helpMarkDown": "The ZIP file with source code for function. (max: 100MB)",
-      "visibleRule": "funcSourceMode = zip || operation = deploy"
+      "visibleRule": "funcSourceMode = zip"
     },
     {
       "name": "funcSourceRepo",
@@ -330,6 +330,7 @@
       "name": "networkMode",
       "type": "radio",
       "label": "Network connection mode",
+      "groupName": "FunctionCreation",
       "defaultValue": "connector",
       "required": false,
       "options": {
@@ -386,6 +387,49 @@
         "ALLOW_ALL": "Allow HTTP traffic from public and private sources.",
         "ALLOW_INTERNAL_ONLY": "Allow HTTP traffic from only private VPC sources."
       }
+    },
+    {
+      "name": "deploySourceMode",
+      "type": "pickList",
+      "label": "Source Location",
+      "defaultValue": "zip",
+      "required": true,
+      "properties": {
+        "zip": "Local/Build file",
+        "repo": "Source Repository",
+        "storage": "Google Cloud Storage file"
+      },
+      "visibleRule": "operation = deploy"
+    },
+    {
+      "name": "deploySourceZip",
+      "type": "filePath",
+      "label": "Source ZIP file",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "The ZIP file with source code for function. (max: 100MB)",
+      "visibleRule": "operation = deploy && deploySourceMode = zip"
+    },
+    {
+      "name": "deploySourceRepo",
+      "type": "pickList",
+      "label": "Source repository",
+      "defaultValue": "",
+      "required": true,
+      "properties": {
+        "EditableOptions": "True"
+      },
+      "helpMarkDown": "The source repository where a function is hosted. (beta)",
+      "visibleRule": "operation = deploy && deploySourceMode = repo"
+    },
+    {
+      "name": "deploySourceArchive",
+      "type": "string",
+      "label": "Source Archive URL",
+      "defaultValue": "gs://",
+      "required": true,
+      "helpMarkDown": "The Google Cloud Storage URL, starting with gs://, pointing to the zip archive which contains the function.",
+      "visibleRule": "operation = deploy && deploySourceMode = storage"
     },
     {
       "name": "gcpLabels",
