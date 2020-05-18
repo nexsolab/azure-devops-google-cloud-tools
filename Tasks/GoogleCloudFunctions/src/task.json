@@ -441,7 +441,7 @@
   ],
   "execution": {
     "Node": {
-      "target": "dist/main.js",
+      "target": "main.js",
       "argumentFormat": ""
     }
   },

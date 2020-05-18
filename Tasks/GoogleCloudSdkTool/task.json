@@ -43,7 +43,7 @@
   ],
   "execution": {
     "Node": {
-      "target": "dist/gcloudcli.js",
+      "target": "gcloudcli.js",
       "argumentFormat": ""
     }
   },

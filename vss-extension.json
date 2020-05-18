@@ -113,10 +113,10 @@
       "addressable": true
     },
     {
-      "path": "Tasks/GoogleCloudSdkTool/dist"
+      "path": "Tasks/GoogleCloudSdkTool"
     },
     {
-      "path": "Tasks/GoogleCloudFunctions/dist"
+      "path": "Tasks/GoogleCloudFunctions"
     }
   ]
 }
