@@ -2,14 +2,21 @@
 
 # Google Cloud SDK tool installer
 
-Install the Google Cloud SDK CLI `gcloud` in an agent to use with nested tasks.
-This may be the first task in your pipeline.
+Install the Google Cloud SDK CLI `gcloud` in an agent to use with nested tasks.  
+*This may be the first task in your pipeline.*
+
+## Extension
+
+Make sure you have the extension installed for your organization.  
+See [How to install](/#how-to-install-extension) for more instructions.
 
 ## How to use
 
-Goes to Azure Marketplace and search for "Google Cloud SDK tool installer".
-Install the extension for your organization and later you can use as a task in a Release Pipeline.
-This should be the first step for any pipeline that needs `gcloud` CLI.
+On your Release Pipeline add a new task and search for "Google Cloud SDK tool installer". 
+
+## Task preview
+
+![Azure DevOps Task Screenshot](screenshots/task.png)
 
 ## How it works
 

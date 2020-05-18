@@ -7,8 +7,6 @@ yarn-error.log*
 lerna-debug.log*
 
 # Project
-[Tt]asks/**/*.js
-[Tt]ests/**/*.js
 !**/mock_node_modules/**/*.js
 *.vsix
 .taskkey
@@ -109,4 +107,3 @@ dist
 
 # TernJS port file
 .tern-port
-Tasks/GoogleCloudSdkTool/.taskkey
