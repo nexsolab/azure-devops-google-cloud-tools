@@ -450,130 +450,135 @@ async function deployFunction(location, name) {
 async function main() {
   let taskSuccess = false;
 
-  // Get authentication method
-  let jsonCredential = '';
-  const authMethod = taskLib.getInput('authenticationMethod', true);
+  try {
+    // Get authentication method
+    let jsonCredential = '';
+    const authMethod = taskLib.getInput('authenticationMethod', true);
 
-  if (authMethod === 'serviceAccount') {
-    jsonCredential = taskLib.getEndpointDataParameter('serviceAccount', 'certificate', false);
-    taskLib.debug('Using Service Connection authentication');
-  } else if (authMethod === 'jsonFile') {
-    const secureFileId = taskLib.getInput('jsonCredentials', true);
-    const secureFileHelpers = new secureFilesCommon.SecureFileHelpers();
-    const secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
+    if (authMethod === 'serviceAccount') {
+      jsonCredential = taskLib.getEndpointDataParameter('serviceAccount', 'certificate', false);
+      taskLib.debug('Using Service Connection authentication');
+    } else if (authMethod === 'jsonFile') {
+      const secureFileId = taskLib.getInput('jsonCredentials', true);
+      const secureFileHelpers = new secureFilesCommon.SecureFileHelpers();
+      const secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
 
-    if (taskLib.exist(secureFilePath)) {
-      jsonCredential = fs.readFileSync(secureFilePath, { encoding: 'utf8' });
-    } else {
-      taskLib.error(`Secure file not founded at ${secureFilePath}`);
-      taskLib.setResult(taskLib.TaskResult.Failed);
-      return;
-    }
-  }
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: jsonCredential,
-    // Scopes can be specified either as an array or as a single, space-delimited string.
-    scopes: [
-      'https://www.googleapis.com/auth/cloud-platform',
-      'https://www.googleapis.com/auth/cloudfunctions',
-    ],
-  });
-
-  // Acquire an auth client, and bind it to all future calls
-  const authClient = await auth.getClient();
-  google.options('auth', authClient);
-
-  // Get info about credential
-  if (jsonCredential) {
-    const credentials = JSON.parse(jsonCredential);
-    taskLib.debug(`Authenticated as ${credentials.client_email}`);
-  } else {
-    taskLib.debug('Authenticated (JSON could not be read.');
-  }
-
-  // Check operation
-  const op = taskLib.getInput('operation', false);
-
-  // Get some basic info
-  const projectId = taskLib.getInput('gcpProject', true);
-  const region = taskLib.getInput('gcpRegion', true);
-  const location = `projects/${projectId}/locations/${region}`;
-  const name = taskLib.getInput('funcName', true);
-
-  switch (op) {
-    case 'create': {
-      let result = null;
-      taskLib.debug(`Project: ${location}, Function name: ${name}`);
-
-      // Check if the function already exists
-      console.log('Checking if the Function already exists...');
-      const func = await getFunction(location, name);
-
-      if (!func) {
-        // Create
-        console.log(`Function ${name} not found in ${location}.`);
-        result = await createFunction(location, name);
+      if (taskLib.exist(secureFilePath)) {
+        jsonCredential = fs.readFileSync(secureFilePath, { encoding: 'utf8' });
       } else {
-        // Update
-        result = await updateFunction(location, name, func);
+        taskLib.error(`Secure file not founded at ${secureFilePath}`);
+        taskLib.setResult(taskLib.TaskResult.Failed);
+        return;
       }
+    }
 
-      // Check if unauthenticated access is allowed
-      if (taskLib.getBoolInput('funcHttpsAnonym', false)) {
-        taskLib.debug('Should allow public access');
+    const auth = new google.auth.GoogleAuth({
+      credentials: jsonCredential,
+      // Scopes can be specified either as an array or as a single, space-delimited string.
+      scopes: [
+        'https://www.googleapis.com/auth/cloud-platform',
+        'https://www.googleapis.com/auth/cloudfunctions',
+      ],
+    });
 
-        const res = await cloudFunctions.projects.locations.functions.setIamPolicy({
-          resource: `${location}/functions/${name}`,
-          requestBody: {
-            policy: {
-              bindings: [
-                {
-                  role: 'roles/cloudfunctions.invoker',
-                  members: ['allUsers'],
-                },
-              ],
+    // Acquire an auth client, and bind it to all future calls
+    const authClient = await auth.getClient();
+    google.options('auth', authClient);
+
+    // Get info about credential
+    if (jsonCredential) {
+      const credentials = JSON.parse(jsonCredential);
+      taskLib.debug(`Authenticated as ${credentials.client_email}`);
+    } else {
+      taskLib.debug('Authenticated (JSON could not be read.');
+    }
+
+    // Check operation
+    const op = taskLib.getInput('operation', false);
+
+    // Get some basic info
+    const projectId = taskLib.getInput('gcpProject', true);
+    const region = taskLib.getInput('gcpRegion', true);
+    const location = `projects/${projectId}/locations/${region}`;
+    const name = taskLib.getInput('funcName', true);
+
+    switch (op) {
+      case 'create': {
+        let result = null;
+        taskLib.debug(`Project: ${location}, Function name: ${name}`);
+
+        // Check if the function already exists
+        console.log('Checking if the Function already exists...');
+        const func = await getFunction(location, name);
+
+        if (!func) {
+          // Create
+          console.log(`Function ${name} not found in ${location}.`);
+          result = await createFunction(location, name);
+        } else {
+          // Update
+          result = await updateFunction(location, name, func);
+        }
+
+        // Check if unauthenticated access is allowed
+        if (taskLib.getBoolInput('funcHttpsAnonym', false)) {
+          taskLib.debug('Should allow public access');
+
+          const res = await cloudFunctions.projects.locations.functions.setIamPolicy({
+            resource: `${location}/functions/${name}`,
+            requestBody: {
+              policy: {
+                bindings: [
+                  {
+                    role: 'roles/cloudfunctions.invoker',
+                    members: ['allUsers'],
+                  },
+                ],
+              },
             },
-          },
-        });
+          });
 
-        taskLib.debug(`Status code of allow anonym access is ${res.status}`);
+          taskLib.debug(`Status code of allow anonym access is ${res.status}`);
+        }
+
+        // Output vars
+        if (result.httpsTrigger && result.httpsTrigger.url) {
+          taskLib.setVariable('FunctionUrl', result.httpsTrigger.url);
+        }
+
+        taskLib.setVariable('FunctionVersionId', result.versionId);
+
+        // Success?
+        taskSuccess = result.done;
+
+        break;
       }
 
-      // Output vars
-      if (result.httpsTrigger && result.httpsTrigger.url) {
-        taskLib.setVariable('FunctionUrl', result.httpsTrigger.url);
+      case 'delete':
+        taskSuccess = await deleteFunction(location, name);
+        break;
+
+      case 'deploy':
+        taskSuccess = await deployFunction(location, name);
+        break;
+
+      case 'call': {
+        const callResult = await callFunction(location, name);
+        taskSuccess = true;
+        taskLib.setVariable('FunctionCallResult', callResult);
+        break;
       }
 
-      taskLib.setVariable('FunctionVersionId', result.versionId);
-
-      // Success?
-      taskSuccess = result.done;
-
-      break;
+      default:
+        break;
     }
 
-    case 'delete':
-      taskSuccess = await deleteFunction(location, name);
-      break;
-
-    case 'deploy':
-      taskSuccess = await deployFunction(location, name);
-      break;
-
-    case 'call': {
-      const callResult = await callFunction(location, name);
-      taskSuccess = true;
-      taskLib.setVariable('FunctionCallResult', callResult);
-      break;
-    }
-
-    default:
-      break;
+    // Set output
+    taskLib.setVariable('FunctionName', `${location}/functions/${name}`);
+  } catch (error) {
+    console.error(`Failed: ${error.message}`);
+    taskLib.debug(error.stack);
   }
-
-  // Set output
-  taskLib.setVariable('FunctionName', `${location}/functions/${name}`);
 
   if (taskSuccess) {
     taskLib.setResult(taskLib.TaskResult.Succeeded);
