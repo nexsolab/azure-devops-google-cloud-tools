@@ -10,10 +10,10 @@
   "runsOn": ["Agent"],
   "visibility": ["Build", "Release"],
   "author": "Gabriel Anderson",
-  "instanceNameFormat": "$(operation) Google Cloud Function",
+  "instanceNameFormat": "Cloud Function - $(operation) $(funcName)",
   "version": {
     "Major": 0,
-    "Minor": 2,
+    "Minor": 5,
     "Patch": 0
   },
   "groups": [{
@@ -25,7 +25,7 @@
     {
       "name": "GCPResourceOptions",
       "displayName": "Google Cloud resource options",
-      "isExpanded": true
+      "isExpanded": false
     }
   ],
   "inputs": [{
@@ -37,7 +37,7 @@
         "serviceAccount": "Service Account (Connected Service)",
         "jsonFile": "JSON file credentials"
       },
-      "helpMarkDown": "Authorization requires the following Google IAM permission on the specified resources:<br />cloudfunctions.functions.call<br />cloudfunctions.functions.create<br />cloudfunctions.functions.delete<br />cloudfunctions.functions.get<br />cloudfunctions.functions.sourceCodeSet"
+      "helpMarkDown": "Authorization requires the following Google IAM permission on the specified resources:<br />`cloudfunctions.functions.call`<br />`cloudfunctions.functions.create`<br />`cloudfunctions.functions.delete`<br />`cloudfunctions.functions.get`<br />`cloudfunctions.functions.sourceCodeSet`"
     },
     {
       "name": "serviceAccount",
@@ -74,7 +74,6 @@
       "name": "gcpProject",
       "type": "pickList",
       "label": "Project",
-      "groupName": "FunctionCreation",
       "defaultValue": "",
       "required": true,
       "properties": {
@@ -86,7 +85,6 @@
       "name": "gcpRegion",
       "type": "pickList",
       "label": "Region",
-      "groupName": "FunctionCreation",
       "defaultValue": "",
       "required": true,
       "properties": {
@@ -104,16 +102,16 @@
     },
     {
       "name": "funcCallData",
-      "type": "string",
+      "type": "multiLine",
       "label": "Input to be passed to the function.",
       "defaultValue": "",
       "required": true,
-      "helpMarkDown": "Data could be a string or a JSON (started by [ or { chars).<br />**Note about execution:**<br />Synchronously invokes a deployed Cloud Function. To be used for testing purposes as very limited traffic is allowed. For more information on the actual limits, refer to [https://cloud.google.com/functions/quotas#rate_limits](Rate Limits).",
+      "helpMarkDown": "Data could be a string or a JSON (started by `[` or `{` chars).<br />**Note about execution:**<br />Synchronously invokes a deployed Cloud Function. To be used for testing purposes as very limited traffic is allowed. For more information on the actual limits, refer to [Rate Limits](https://cloud.google.com/functions/quotas#rate_limits).",
       "visibleRule": "operation = call"
     },
     {
       "name": "funcTrigger",
-      "type": "radio",
+      "type": "pickList",
       "label": "Trigger mode",
       "groupName": "FunctionCreation",
       "defaultValue": "https",
@@ -266,7 +264,7 @@
       "groupName": "FunctionCreation",
       "defaultValue": "",
       "required": false,
-      "helpMarkDown": "The email of the function's service account. If empty, defaults to {project_id}@appspot.gserviceaccount.com."
+      "helpMarkDown": "The email of the function's service account. If empty, defaults to `{project_id}@appspot.gserviceaccount.com`."
     },
     {
       "name": "funcRuntime",
@@ -345,7 +343,7 @@
       "groupName": "FunctionCreation",
       "defaultValue": "",
       "required": false,
-      "helpMarkDown": "The VPC Network that this cloud function can connect to. It can be either the fully-qualified URI, or the short name of the network resource. If the short network name is used, the network must belong to the same project. Otherwise, it must belong to a project within the same organization. The format of this field is either projects/{project}/global/networks/{network} or {network}, where {project} is a project id where the network is defined, and {network} is the short name of the network. [VPC Documentation](https://cloud.google.com/compute/docs/vpc)",
+      "helpMarkDown": "The VPC Network that this cloud function can connect to. It can be either the fully-qualified URI, or the short name of the network resource. If the short network name is used, the network must belong to the same project. Otherwise, it must belong to a project within the same organization. The format of this field is either `projects/{project}/global/networks/{network}` or `{network}`, where `{project}` is a project id where the network is defined, and `{network}` is the short name of the network. [VPC Documentation](https://cloud.google.com/compute/docs/vpc)",
       "visibleRule": "networkMode = vpc"
     },
     {
@@ -438,7 +436,7 @@
       "groupName": "GCPResourceOptions",
       "defaultValue": "",
       "required": false,
-      "helpMarkDown": "Put JSON or use the editor. Keys must start with a lowercase character and contain only hyphens (-), underscores (_), lowercase characters, and numbers. Values must contain only hyphens (-), underscores (_), lowercase characters, and numbers.",
+      "helpMarkDown": "Put JSON or use the editor.<br />**Keys** must start with a lowercase character and contain only hyphens (\\-), underscores (\\_), lowercase characters, and numbers.<br />**Values** must contain only hyphens (\\-), underscores (\\_), lowercase characters, and numbers.",
       "properties": {
         "editorExtension": "ms.vss-services-azure.parameters-grid"
       }
@@ -452,7 +450,7 @@
       "required": false,
       "helpMarkDown": "The Google Cloud Platform project that will be charged quota for operations performed in gcloud. If you need to operate on one project, but need quota against a different project, you can use this flag to specify the billing project.",
       "properties": {
-        "editorExtension": "ms.vss-services-azure.parameters-grid"
+        "EditableOptions": "True"
       }
     }
   ],
