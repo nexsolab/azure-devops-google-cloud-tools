@@ -116,21 +116,12 @@
       "groupName": "FunctionCreation",
       "defaultValue": "https",
       "required": true,
-      "properties": {
+      "options": {
         "https": "HTTPS",
         "topic": "Pub/Sub Topic",
         "bucket": "Storage bucket",
         "event": "Event"
       }
-    },
-    {
-      "name": "funcHttpsUrl",
-      "type": "string",
-      "label": "Function HTTPs URL",
-      "groupName": "FunctionCreation",
-      "defaultValue": "",
-      "required": true,
-      "visibleRule": "funcTrigger = https"
     },
     {
       "name": "funcHttpsAnonym",
@@ -141,14 +132,6 @@
       "required": false,
       "helpMarkDown": "If set, makes this a public function. This will allow all callers, without checking authentication.<br />Check this if your service is an API or public site.",
       "visibleRule": "funcTrigger = https"
-    },
-    {
-      "name": "funcHttpsUrl",
-      "type": "string",
-      "label": "Function HTTPs URL",
-      "groupName": "FunctionCreation",
-      "defaultValue": "",
-      "required": true
     },
     {
       "name": "funcBucket",
@@ -209,7 +192,7 @@
       "groupName": "FunctionCreation",
       "defaultValue": "zip",
       "required": true,
-      "properties": {
+      "options": {
         "zip": "Local/Build file",
         "repo": "Source Repository",
         "storage": "Google Cloud Storage file"
@@ -353,7 +336,7 @@
       "groupName": "FunctionCreation",
       "defaultValue": "",
       "required": false,
-      "helpMarkDown": "The VPC Network Connector that this cloud function can connect to. It can be either the fully-qualified URI, or the short name of the network connector resource. The format of this field is projects/*/locations/*/connectors/*. [VPC Documentation](https://cloud.google.com/compute/docs/vpc)",
+      "helpMarkDown": "The VPC Network Connector that this cloud function can connect to. It can be either the fully-qualified URI, or the short name of the network connector resource. The format of this field is `projects/*/locations/*/connectors/*`. [VPC Documentation](https://cloud.google.com/compute/docs/vpc)",
       "visibleRule": "networkMode = connector"
     },
     {
@@ -392,7 +375,7 @@
       "label": "Source Location",
       "defaultValue": "zip",
       "required": true,
-      "properties": {
+      "options": {
         "zip": "Local/Build file",
         "repo": "Source Repository",
         "storage": "Google Cloud Storage file"

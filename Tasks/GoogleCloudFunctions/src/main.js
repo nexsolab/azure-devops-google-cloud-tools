@@ -148,9 +148,7 @@ async function getCreateResquestBody(location, name) {
       break;
 
     default:
-      requestBody.httpsTrigger = {
-        url: taskLib.getInput('funcHttpsUrl', true),
-      };
+      requestBody.httpsTrigger = {};
       break;
   }
 
