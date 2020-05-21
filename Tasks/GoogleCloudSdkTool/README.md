@@ -1,6 +1,6 @@
 ![Build status](https://dev.azure.com/nexsobr/Nexso%20Agile%20Team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.TaskCloudSdk)
 
-# Google Cloud SDK tool installer
+# <img src="icon.svg" height="48">  Google Cloud SDK tool installer
 
 Install the Google Cloud SDK CLI `gcloud` in an agent to use with nested tasks.  
 *This may be the first task in your pipeline.*

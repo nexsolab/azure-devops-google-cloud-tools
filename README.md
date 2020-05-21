@@ -1,5 +1,4 @@
-![Release status](https://vsrm.dev.azure.com/nexsobr/_apis/public/Release/badge/7c7f8052-bec7-4f7d-b267-22a6f7da4a37/1/1) 
-![Build status](https://dev.azure.com/nexsobr/Nexso%20Agile%20Team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.BaseExtension)
+![Build status](https://dev.azure.com/nexsobr/Nexso%20Agile%20Team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.BaseExtension) ![Release status](https://vsrm.dev.azure.com/nexsobr/_apis/public/Release/badge/7c7f8052-bec7-4f7d-b267-22a6f7da4a37/1/1) 
 
 # Google Cloud Tools for Azure DevOps Pipelines
 
@@ -10,7 +9,7 @@ Google Cloud Platform (GCP) tasks for Azure DevOps Pipelines
 - **[Google Cloud SDK tool installer](Tasks/GoogleCloudSdkTool)**  
 Install gcloud CLI for use in all tasks or for custom commands.
 - **[Google Cloud Functions](Tasks/GoogleCloudFunctions)**  
-Deploy code to Cloud Functions or manage them: Create/Update, Delete or call functions.
+Deploy code to Cloud Functions or manage them: Create/Update, Delete or Call functions.
 - **Deploy and manage App Service** (soon)
 - **Manage DNS records** (soon)
 - **Manage Service Endpoints** (soon)

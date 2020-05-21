@@ -1,6 +1,6 @@
-![Build status](https://dev.azure.com/nexsobr/Nexso%20Agile%20Team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.TaskFunctions)
+![Build status](https://dev.azure.com/nexsobr/Nexso%20Agile%20Team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.TaskFunctions) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=azure-devops-google-cloud-tools&metric=alert_status)](https://sonarcloud.io/dashboard?id=azure-devops-google-cloud-tools)
 
-# Google Cloud Functions
+# <img src="src/icon.svg" height="48"> Google Cloud Functions
 
 Deploy and manage Cloud Functions via Azure DevOps Pipeline task.  
 *Note: You don't need the Cloud SDK tool before this task.*
@@ -39,3 +39,21 @@ The account informed in Service Connection or JSON key requires the following Go
   - `cloudfunctions.functions.sourceCodeSet`
 - Call
   - `cloudfunctions.functions.call`
+
+## Operations
+
+### Deploy
+
+![](screenshots/deploy.png)
+
+### Call
+
+![](screenshots/call.png)
+
+### Delete
+
+![](screenshots/delete.png)
+
+### Create
+
+![](screenshots/create.png)
