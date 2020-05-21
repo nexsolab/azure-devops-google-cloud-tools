@@ -488,7 +488,7 @@ async function main() {
         jsonCredential = fs.readFileSync(secureFilePath, { encoding: 'utf8' });
       } else {
         taskLib.error(`Secure file not founded at ${secureFilePath}`);
-        taskLib.setResult(taskLib.TaskResult.Failed).indexOf(0,)
+        taskLib.setResult(taskLib.TaskResult.Failed);
         return;
       }
     }
