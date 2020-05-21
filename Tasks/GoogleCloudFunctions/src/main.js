@@ -3,6 +3,7 @@
 import * as taskLib from 'azure-pipelines-task-lib/task';
 import { google } from 'googleapis';
 import fetch from 'node-fetch';
+import path from 'path';
 import fs from 'fs';
 import secureFilesCommon from 'securefiles-common/securefiles-common';
 import deepDiff from 'return-deep-diff';
@@ -383,28 +384,70 @@ async function callFunction(location, name) {
   return res.data && res.data.result;
 }
 
-function findMatchingFiles(filePath) {
-  console.log(`Searching ${filePath} for files to upload`);
-  const allPaths = taskLib.find(filePath);
-  taskLib.debug('AllPaths');
-  taskLib.debug(allPaths);
-  const matchedPaths = taskLib.match(allPaths, filePath, '');
-  taskLib.debug(`MatchedPaths ${matchedPaths}`);
-  const matchedFiles = matchedPaths.filter((itemPath) => !taskLib.stats(itemPath).isDirectory());
-  taskLib.debug(`MatchedFiles ${matchedFiles}`);
-  taskLib.debug(`FoundNFiles ${matchedFiles.length}`);
+function findMatchingFiles(filepath) {
+  taskLib.debug(`Finding files matching input: ${filepath}`);
 
-  return matchedFiles;
+  let filesList;
+  if (filepath.indexOf('*') === -1 && filepath.indexOf('?') === -1) {
+    // No pattern found, check literal path to a single file
+    if (taskLib.exist(filepath)) {
+      filesList = [filepath];
+    } else {
+      taskLib.debug(`No matching files were found with search pattern: ${filepath}`);
+      return [];
+    }
+  } else {
+    const firstWildcardIndex = (str) => {
+      const idx = str.indexOf('*');
+      const idxOfWildcard = str.indexOf('?');
+
+      if (idxOfWildcard > -1) {
+        return (idx > -1) ? Math.min(idx, idxOfWildcard) : idxOfWildcard;
+      }
+
+      return idx;
+    };
+
+    // Find app files matching the specified pattern
+    taskLib.debug(`Matching glob pattern: ${filepath}`);
+
+    // First find the most complete path without any matching patterns
+    const idx = firstWildcardIndex(filepath);
+    taskLib.debug(`Index of first wildcard: ${idx}`);
+    const slicedPath = filepath.slice(0, idx);
+    let findPathRoot = path.dirname(slicedPath);
+
+    if (slicedPath.endsWith('\\') || slicedPath.endsWith('/')) {
+      findPathRoot = slicedPath;
+    }
+
+    taskLib.debug(`find root dir: ${findPathRoot}`);
+
+    // Now we get a list of all files under this root
+    const allFiles = taskLib.find(findPathRoot);
+
+    // Now matching the pattern against all files
+    filesList = taskLib.match(allFiles, filepath, '', { matchBase: true, nocase: !!taskLib.osType().match(/^Win/) });
+
+    // Fail if no matching files were found
+    if (!filesList || filesList.length === 0) {
+      taskLib.debug(`No matching files were found with search pattern: ${filepath}`);
+      return [];
+    }
+  }
+  return filesList;
 }
 
 /**
  * Deploy new version of the Function to the cloud.
  *
+ * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  */
-async function deployFunction(location, name) {
+async function deployFunction(auth, location, name) {
   const request = {
+    auth,
     name: `${location}/functions/${name}`,
     updateMask: '',
     requestBody: {},
@@ -436,11 +479,16 @@ async function deployFunction(location, name) {
       const zipPath = taskLib.getPathInput('deploySourceZip', true, false);
       const files = findMatchingFiles(zipPath);
 
+      if (files.length === 0) {
+        taskLib.error('Not found any file.');
+        return taskLib.setResult(taskLib.TaskResult.Failed);
+      }
+
       if (files.length > 1) {
         taskLib.warning('Several files were found, using the first. All others will be discarded');
       }
 
-      taskLib.debug(`Using Zip file ${files[0]} as the source code.`);
+      console.log(`Using Zip file ${files[0]} as the source code.`);
       request.requestBody.sourceUploadUrl = await uploadFile(location, files[0]);
       request.updateMask = 'sourceUploadUrl';
       break;
@@ -450,6 +498,8 @@ async function deployFunction(location, name) {
       break;
   }
 
+  taskLib.debug('Requesting GCP with data:');
+  taskLib.debug(JSON.stringify(request));
   const res = await cloudFunctions.projects.locations.functions.patch(request);
 
   if (!res.data || !res.data.done) {
@@ -587,7 +637,7 @@ async function main() {
         break;
 
       case 'deploy':
-        taskSuccess = await deployFunction(location, name);
+        taskSuccess = await deployFunction(authClient, location, name);
         break;
 
       case 'call': {
