@@ -383,6 +383,20 @@ async function callFunction(location, name) {
   return res.data && res.data.result;
 }
 
+function findMatchingFiles(filePath) {
+  console.log(`Searching ${filePath} for files to upload`);
+  const allPaths = taskLib.find(filePath);
+  taskLib.debug('AllPaths');
+  taskLib.debug(allPaths);
+  const matchedPaths = taskLib.match(allPaths, filePath, '');
+  taskLib.debug(`MatchedPaths ${matchedPaths}`);
+  const matchedFiles = matchedPaths.filter((itemPath) => !taskLib.stats(itemPath).isDirectory());
+  taskLib.debug(`MatchedFiles ${matchedFiles}`);
+  taskLib.debug(`FoundNFiles ${matchedFiles.length}`);
+
+  return matchedFiles;
+}
+
 /**
  * Deploy new version of the Function to the cloud.
  *
@@ -420,8 +434,14 @@ async function deployFunction(location, name) {
 
     case 'zip': {
       const zipPath = taskLib.getPathInput('deploySourceZip', true, true);
-      taskLib.debug(`Using Zip file ${zipPath} as the source code.`);
-      request.requestBody.sourceUploadUrl = await uploadFile(location, zipPath);
+      const files = findMatchingFiles(zipPath);
+
+      if (files.length > 1) {
+        taskLib.warning('Several files were found, using the first. All others will be discarded');
+      }
+
+      taskLib.debug(`Using Zip file ${files[0]} as the source code.`);
+      request.requestBody.sourceUploadUrl = await uploadFile(location, files[0]);
       request.updateMask = 'sourceUploadUrl';
       break;
     }
@@ -479,8 +499,6 @@ async function main() {
     const escapedKey = jsonCredential.substring(privateKeyIni, privateKeyEnd).replace(/\n/g, '\\n');
     const jsonStart = jsonCredential.substring(0, privateKeyIni);
     const jsonEscaped = jsonStart + escapedKey + jsonCredential.substr(privateKeyEnd);
-    taskLib.debug('Escaped JSON key file is:');
-    taskLib.debug(jsonEscaped);
 
     const auth = new google.auth.GoogleAuth({
       credentials: JSON.parse(jsonEscaped),
