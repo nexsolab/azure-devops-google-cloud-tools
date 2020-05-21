@@ -457,8 +457,6 @@ async function main() {
 
     if (authMethod === 'serviceAccount') {
       const account = taskLib.getInput('SCserviceAccount', true);
-      taskLib.debug(`Value of Service Account is ${account}`);
-
       jsonCredential = taskLib.getEndpointAuthorizationParameter(account, 'certificate', false);
       taskLib.debug('Using Service Connection authentication');
     } else if (authMethod === 'jsonFile') {
@@ -470,13 +468,22 @@ async function main() {
         jsonCredential = fs.readFileSync(secureFilePath, { encoding: 'utf8' });
       } else {
         taskLib.error(`Secure file not founded at ${secureFilePath}`);
-        taskLib.setResult(taskLib.TaskResult.Failed);
+        taskLib.setResult(taskLib.TaskResult.Failed).indexOf(0,)
         return;
       }
     }
 
+    // Fix line breaks in private key before parse JSON
+    const privateKeyIni = jsonCredential.indexOf('-----BEGIN PRIVATE KEY-----');
+    const privateKeyEnd = jsonCredential.indexOf('",', privateKeyIni);
+    const escapedKey = jsonCredential.substring(privateKeyIni, privateKeyEnd).replace(/\n/g, '\\n');
+    const jsonStart = jsonCredential.substring(0, privateKeyIni);
+    const jsonEscaped = jsonStart + escapedKey + jsonCredential.substr(privateKeyEnd);
+    taskLib.debug('Escaped JSON key file is:');
+    taskLib.debug(jsonEscaped);
+
     const auth = new google.auth.GoogleAuth({
-      credentials: jsonCredential,
+      credentials: JSON.parse(jsonEscaped),
       // Scopes can be specified either as an array or as a single, space-delimited string.
       scopes: [
         'https://www.googleapis.com/auth/cloud-platform',
