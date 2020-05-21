@@ -433,7 +433,7 @@ async function deployFunction(location, name) {
     }
 
     case 'zip': {
-      const zipPath = taskLib.getPathInput('deploySourceZip', true, true);
+      const zipPath = taskLib.getPathInput('deploySourceZip', true, false);
       const files = findMatchingFiles(zipPath);
 
       if (files.length > 1) {
