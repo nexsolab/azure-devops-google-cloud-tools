@@ -13,13 +13,17 @@ const cloudFunctions = google.cloudfunctions('v1');
 /**
  * Upload the Zip file with source code to the cloud.
  *
+ * @param {*} auth Google Auth Client
  * @param {String} project Full project identification
  * @param {String} zipFile Path to the zip file
  * @returns {String} Return the url of the file uploaded.
  */
-async function uploadFile(project, zipFile) {
+async function uploadFile(auth, project, zipFile) {
+  taskLib.debug(`Generate Upload URL for ${project}`);
+
   // Generate the URL to upload the file
   const storageResult = await cloudFunctions.projects.locations.functions.generateUploadUrl({
+    auth,
     // The project and location in which the Google Cloud Storage signed URL
     // should be generated, specified in the format `projects/x/locations/x`.
     parent: project,
@@ -68,6 +72,139 @@ async function uploadFile(project, zipFile) {
   // Finish
   taskLib.debug(`Uploaded URL is ${url}`);
   return url;
+}
+
+/**
+ * Find file with glob patterns
+ *
+ * @param {String} filepath File Pattern
+ * @returns {String[]} List of files founded
+ */
+function findMatchingFiles(filepath) {
+  taskLib.debug(`Finding files matching input: ${filepath}`);
+
+  let filesList;
+  if (filepath.indexOf('*') === -1 && filepath.indexOf('?') === -1) {
+    // No pattern found, check literal path to a single file
+    if (taskLib.exist(filepath)) {
+      filesList = [filepath];
+    } else {
+      taskLib.debug(`No matching files were found with search pattern: ${filepath}`);
+      return [];
+    }
+  } else {
+    const firstWildcardIndex = (str) => {
+      const idx = str.indexOf('*');
+      const idxOfWildcard = str.indexOf('?');
+
+      if (idxOfWildcard > -1) {
+        return (idx > -1) ? Math.min(idx, idxOfWildcard) : idxOfWildcard;
+      }
+
+      return idx;
+    };
+
+    // Find app files matching the specified pattern
+    taskLib.debug(`Matching glob pattern: ${filepath}`);
+
+    // First find the most complete path without any matching patterns
+    const idx = firstWildcardIndex(filepath);
+    taskLib.debug(`Index of first wildcard: ${idx}`);
+    const slicedPath = filepath.slice(0, idx);
+    let findPathRoot = path.dirname(slicedPath);
+
+    if (slicedPath.endsWith('\\') || slicedPath.endsWith('/')) {
+      findPathRoot = slicedPath;
+    }
+
+    taskLib.debug(`find root dir: ${findPathRoot}`);
+
+    // Now we get a list of all files under this root
+    const allFiles = taskLib.find(findPathRoot);
+
+    // Now matching the pattern against all files
+    filesList = taskLib.match(allFiles, filepath, '', { matchBase: true, nocase: !!taskLib.osType().match(/^Win/) });
+
+    // Fail if no matching files were found
+    if (!filesList || filesList.length === 0) {
+      taskLib.debug(`No matching files were found with search pattern: ${filepath}`);
+      return [];
+    }
+  }
+  return filesList;
+}
+
+/**
+ * Deploy new version of the Function to the cloud.
+ *
+ * @param {*} auth Google Auth Client
+ * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
+ * @param {String} name Function name
+ */
+async function deployFunction(auth, location, name, mode, sourceValue) {
+  const request = {
+    auth,
+    name: `${location}/functions/${name}`,
+    updateMask: '',
+    requestBody: {},
+  };
+
+  // mode
+  switch (mode) {
+    case 'storage': {
+      const storagePath = sourceValue;
+      taskLib.debug(`Using Google Storage Zip file as source code at ${storagePath}`);
+      request.requestBody.sourceArchiveUrl = storagePath;
+      request.updateMask = 'sourceArchiveUrl';
+      break;
+    }
+
+    case 'repo': {
+      const sourceRepo = sourceValue;
+      taskLib.debug(`Using Google Repository as source code at ${sourceRepo}`);
+      request.requestBody.sourceRepository = {
+        url: sourceRepo,
+      };
+      request.updateMask = 'sourceRepository.url';
+      break;
+    }
+
+    case 'zip': {
+      const zipPath = sourceValue;
+      const files = findMatchingFiles(zipPath);
+
+      if (files.length === 0) {
+        taskLib.error('Not found any file.');
+        return taskLib.setResult(taskLib.TaskResult.Failed);
+      }
+
+      if (files.length > 1) {
+        taskLib.warning('Several files were found, using the first. All others will be discarded');
+      }
+
+      console.log(`Using Zip file ${files[0]} as the source code.`);
+      request.requestBody.sourceUploadUrl = await uploadFile(auth, location, files[0]);
+      request.updateMask = 'sourceUploadUrl';
+      break;
+    }
+
+    default:
+      break;
+  }
+
+  taskLib.debug('Requesting GCP with data:');
+  taskLib.debug(JSON.stringify(request));
+  const res = await cloudFunctions.projects.locations.functions.patch(request);
+
+  if (!res.data || !res.data.done) {
+    taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
+    taskLib.debug(res.data.error.details);
+    taskLib.setResult(taskLib.TaskResult.Failed);
+  }
+
+  taskLib.debug('Result from operation:');
+  taskLib.debug(JSON.stringify(res.data));
+  return res.data && res.data.done;
 }
 
 /**
@@ -153,37 +290,6 @@ async function getCreateResquestBody(location, name) {
       break;
   }
 
-  // Get source mode
-  const sourceMode = taskLib.getInput('funcSourceMode', false) || 'zip';
-
-  switch (sourceMode) {
-    case 'storage': {
-      const storagePath = taskLib.getInput('funcSourceArchive', false);
-      taskLib.debug(`Using Google Storage Zip file as source code at ${storagePath}`);
-      requestBody.sourceArchiveUrl = storagePath;
-      break;
-    }
-
-    case 'repo': {
-      const sourceRepo = taskLib.getInput('funcSourceRepo', false);
-      taskLib.debug(`Using Google Repository as source code at ${sourceRepo}`);
-      requestBody.sourceRepository = {
-        url: sourceRepo,
-      };
-      break;
-    }
-
-    case 'zip': {
-      const zipPath = taskLib.getPathInput('funcSourceZip', true, true);
-      taskLib.debug(`Using Zip file ${zipPath} as the source code.`);
-      requestBody.sourceUploadUrl = await uploadFile(location, zipPath);
-      break;
-    }
-
-    default:
-      break;
-  }
-
   // Check network option
   const networkMode = taskLib.getInput('networkMode', false);
 
@@ -234,16 +340,47 @@ async function getCreateResquestBody(location, name) {
 /**
  * Create a new Function in the GCP.
  *
+ * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @returns {Boolean} `true` if the Function was created successfully.
  */
-async function createFunction(location, name) {
+async function createFunction(auth, location, name) {
   const req = await getCreateResquestBody(location, name);
   taskLib.debug('Calling Google API to create the function, with the request:');
   taskLib.debug(JSON.stringify(req));
 
+  // Get source mode
+  let sourceValue = '';
+  const sourceMode = taskLib.getInput('funcSourceMode', false) || 'zip';
+
+  switch (sourceMode) {
+    case 'storage': {
+      sourceValue = taskLib.getInput('funcSourceArchive', false);
+      break;
+    }
+
+    case 'repo': {
+      sourceValue = taskLib.getInput('funcSourceRepo', false);
+      break;
+    }
+
+    case 'zip': {
+      sourceValue = taskLib.getPathInput('funcSourceZip', true, true);
+      break;
+    }
+
+    default:
+      break;
+  }
+
+  // Upload source code
+  await deployFunction(auth, location, name, sourceMode, sourceValue);
+
+  // Create
+  console.log(`Creating function ${location}`);
   const res = await cloudFunctions.projects.locations.functions.create({
+    auth,
     // Required. The project and location in which the function should be created, specified
     // in the format `projects/x/locations/x`
     location,
@@ -281,12 +418,13 @@ function propertiesToArray(obj) {
 /**
  * Update the changed properties of the existing Function.
  *
+ * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @param {Object} currentProperties Current properties to compare with the changed values
  * @returns {Boolean} `true` if the Function was updated successfully.
  */
-async function updateFunction(location, name, currentProperties) {
+async function updateFunction(auth, location, name, currentProperties) {
   taskLib.debug('Update Function');
   const req = await getCreateResquestBody(location, name);
 
@@ -299,6 +437,7 @@ async function updateFunction(location, name, currentProperties) {
   taskLib.debug(`Changed attributes are the above for ${location}/functions/${name}`);
 
   const res = await cloudFunctions.projects.locations.functions.patch({
+    auth,
     updateMask: changedPropertiesNames.join(','),
     requestBody: diff,
   });
@@ -317,12 +456,15 @@ async function updateFunction(location, name, currentProperties) {
 /**
  * Get function properties data.
  *
+ * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @returns {Object} The function body.
  */
-async function getFunction(location, name) {
+async function getFunction(auth, location, name) {
+  taskLib.debug(`Check existence of ${location}/functions/${name}`);
   const res = await cloudFunctions.projects.locations.functions.get({
+    auth,
     name: `${location}/functions/${name}`,
   });
 
@@ -337,13 +479,15 @@ async function getFunction(location, name) {
 /**
  * Delete the resource from GCP.
  *
+ * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @returns {Boolean} `true` if the Function was deleted successfully.
  */
-async function deleteFunction(location, name) {
+async function deleteFunction(auth, location, name) {
   console.log(`Removing Function ${location}/functions/${name}`);
   const res = await cloudFunctions.projects.locations.functions.delete({
+    auth,
     name: `${location}/functions/${name}`,
   });
 
@@ -361,11 +505,12 @@ async function deleteFunction(location, name) {
 /**
  * Make a call to the function.
  *
+ * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @returns {String} Return the execution Id of function invocation.
  */
-async function callFunction(location, name) {
+async function callFunction(auth, location, name) {
   console.log(`Calling Function ${location}/functions/${name}`);
   const callData = taskLib.getInput('funcCallData');
 
@@ -375,6 +520,7 @@ async function callFunction(location, name) {
   const data = (firstChar === '[' || firstChar === '{') ? JSON.parse(callData) : callData;
   taskLib.debug(`Data to call the function: ${callData}`);
   const res = await cloudFunctions.projects.locations.functions.call({
+    auth,
     name: `${location}/functions/${name}`,
     requestBody: data,
   });
@@ -382,135 +528,6 @@ async function callFunction(location, name) {
   console.log(`Id of the invocation: ${res.data && res.data.executionId}`);
   taskLib.debug(`Result of invocation: ${res.data && res.data.result}`);
   return res.data && res.data.result;
-}
-
-function findMatchingFiles(filepath) {
-  taskLib.debug(`Finding files matching input: ${filepath}`);
-
-  let filesList;
-  if (filepath.indexOf('*') === -1 && filepath.indexOf('?') === -1) {
-    // No pattern found, check literal path to a single file
-    if (taskLib.exist(filepath)) {
-      filesList = [filepath];
-    } else {
-      taskLib.debug(`No matching files were found with search pattern: ${filepath}`);
-      return [];
-    }
-  } else {
-    const firstWildcardIndex = (str) => {
-      const idx = str.indexOf('*');
-      const idxOfWildcard = str.indexOf('?');
-
-      if (idxOfWildcard > -1) {
-        return (idx > -1) ? Math.min(idx, idxOfWildcard) : idxOfWildcard;
-      }
-
-      return idx;
-    };
-
-    // Find app files matching the specified pattern
-    taskLib.debug(`Matching glob pattern: ${filepath}`);
-
-    // First find the most complete path without any matching patterns
-    const idx = firstWildcardIndex(filepath);
-    taskLib.debug(`Index of first wildcard: ${idx}`);
-    const slicedPath = filepath.slice(0, idx);
-    let findPathRoot = path.dirname(slicedPath);
-
-    if (slicedPath.endsWith('\\') || slicedPath.endsWith('/')) {
-      findPathRoot = slicedPath;
-    }
-
-    taskLib.debug(`find root dir: ${findPathRoot}`);
-
-    // Now we get a list of all files under this root
-    const allFiles = taskLib.find(findPathRoot);
-
-    // Now matching the pattern against all files
-    filesList = taskLib.match(allFiles, filepath, '', { matchBase: true, nocase: !!taskLib.osType().match(/^Win/) });
-
-    // Fail if no matching files were found
-    if (!filesList || filesList.length === 0) {
-      taskLib.debug(`No matching files were found with search pattern: ${filepath}`);
-      return [];
-    }
-  }
-  return filesList;
-}
-
-/**
- * Deploy new version of the Function to the cloud.
- *
- * @param {*} auth Google Auth Client
- * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
- * @param {String} name Function name
- */
-async function deployFunction(auth, location, name) {
-  const request = {
-    auth,
-    name: `${location}/functions/${name}`,
-    updateMask: '',
-    requestBody: {},
-  };
-
-  // Get source mode
-  const sourceMode = taskLib.getInput('deploySourceMode', false) || 'zip';
-
-  switch (sourceMode) {
-    case 'storage': {
-      const storagePath = taskLib.getInput('deploySourceArchive', false);
-      taskLib.debug(`Using Google Storage Zip file as source code at ${storagePath}`);
-      request.requestBody.sourceArchiveUrl = storagePath;
-      request.updateMask = 'sourceArchiveUrl';
-      break;
-    }
-
-    case 'repo': {
-      const sourceRepo = taskLib.getInput('deploySourceRepo', false);
-      taskLib.debug(`Using Google Repository as source code at ${sourceRepo}`);
-      request.requestBody.sourceRepository = {
-        url: sourceRepo,
-      };
-      request.updateMask = 'sourceRepository.url';
-      break;
-    }
-
-    case 'zip': {
-      const zipPath = taskLib.getPathInput('deploySourceZip', true, false);
-      const files = findMatchingFiles(zipPath);
-
-      if (files.length === 0) {
-        taskLib.error('Not found any file.');
-        return taskLib.setResult(taskLib.TaskResult.Failed);
-      }
-
-      if (files.length > 1) {
-        taskLib.warning('Several files were found, using the first. All others will be discarded');
-      }
-
-      console.log(`Using Zip file ${files[0]} as the source code.`);
-      request.requestBody.sourceUploadUrl = await uploadFile(location, files[0]);
-      request.updateMask = 'sourceUploadUrl';
-      break;
-    }
-
-    default:
-      break;
-  }
-
-  taskLib.debug('Requesting GCP with data:');
-  taskLib.debug(JSON.stringify(request));
-  const res = await cloudFunctions.projects.locations.functions.patch(request);
-
-  if (!res.data || !res.data.done) {
-    taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
-    taskLib.debug(res.data.error.details);
-    taskLib.setResult(taskLib.TaskResult.Failed);
-  }
-
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res.data));
-  return res.data && res.data.done;
 }
 
 /**
@@ -587,15 +604,15 @@ async function main() {
 
         // Check if the function already exists
         console.log('Checking if the Function already exists...');
-        const func = await getFunction(location, name);
+        const func = await getFunction(authClient, location, name);
 
         if (!func) {
           // Create
           console.log(`Function ${name} not found in ${location}.`);
-          result = await createFunction(location, name);
+          result = await createFunction(authClient, location, name);
         } else {
           // Update
-          result = await updateFunction(location, name, func);
+          result = await updateFunction(authClient, location, name, func);
         }
 
         // Check if unauthenticated access is allowed
@@ -633,15 +650,39 @@ async function main() {
       }
 
       case 'delete':
-        taskSuccess = await deleteFunction(location, name);
+        taskSuccess = await deleteFunction(authClient, location, name);
         break;
 
-      case 'deploy':
-        taskSuccess = await deployFunction(authClient, location, name);
+      case 'deploy': {
+        let sourceValue = '';
+        const sourceMode = taskLib.getInput('deploySourceMode', false) || 'zip';
+
+        switch (sourceMode) {
+          case 'storage': {
+            sourceValue = taskLib.getInput('deploySourceArchive', false);
+            break;
+          }
+
+          case 'repo': {
+            sourceValue = taskLib.getInput('deploySourceRepo', false);
+            break;
+          }
+
+          case 'zip': {
+            sourceValue = taskLib.getPathInput('deploySourceZip', true, false);
+            break;
+          }
+
+          default:
+            break;
+        }
+
+        taskSuccess = await deployFunction(authClient, location, name, sourceMode, sourceValue);
         break;
+      }
 
       case 'call': {
-        const callResult = await callFunction(location, name);
+        const callResult = await callFunction(authClient, location, name);
         taskSuccess = true;
         taskLib.setVariable('FunctionCallResult', callResult);
         break;
