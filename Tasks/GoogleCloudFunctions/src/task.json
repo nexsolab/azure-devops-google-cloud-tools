@@ -40,7 +40,7 @@
       "helpMarkDown": "Authorization requires the following Google IAM permission on the specified resources:<br />`cloudfunctions.functions.call`<br />`cloudfunctions.functions.create`<br />`cloudfunctions.functions.delete`<br />`cloudfunctions.functions.get`<br />`cloudfunctions.functions.sourceCodeSet`"
     },
     {
-      "name": "serviceAccount",
+      "name": "SCserviceAccount",
       "type": "connectedService:GoogleCloudServiceEndpoint",
       "label": "Google Cloud Service Account",
       "defaultValue": "",

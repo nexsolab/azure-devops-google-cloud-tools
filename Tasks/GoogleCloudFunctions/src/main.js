@@ -456,7 +456,10 @@ async function main() {
     const authMethod = taskLib.getInput('authenticationMethod', true);
 
     if (authMethod === 'serviceAccount') {
-      jsonCredential = taskLib.getEndpointDataParameter('serviceAccount', 'certificate', false);
+      const account = taskLib.getInput('SCserviceAccount', true);
+      taskLib.debug(`Value of Service Account is ${account}`);
+
+      jsonCredential = taskLib.getEndpointAuthorizationParameter(account, 'certificate', false);
       taskLib.debug('Using Service Connection authentication');
     } else if (authMethod === 'jsonFile') {
       const secureFileId = taskLib.getInput('jsonCredentials', true);
