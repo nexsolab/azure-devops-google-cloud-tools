@@ -197,11 +197,13 @@ async function deployFunction(auth, location, name, mode, sourceValue) {
   const res = await cloudFunctions.projects.locations.functions.patch(request);
 
   taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res.data));
+  taskLib.debug(JSON.stringify(res));
 
   if (!res.data || !res.data.done) {
-    if (res.data.error) taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
-    taskLib.debug(res.data.error.details);
+    if (res.data.error) {
+      taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
+      taskLib.debug(res.data.error.details);
+    }
     taskLib.setResult(taskLib.TaskResult.Failed);
   }
 
