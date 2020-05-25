@@ -581,7 +581,6 @@ async function main() {
 
     // Acquire an auth client, and bind it to all future calls
     const authClient = await auth.getClient();
-    authClient.
     google.options('auth', authClient);
 
     // Get info about credential
