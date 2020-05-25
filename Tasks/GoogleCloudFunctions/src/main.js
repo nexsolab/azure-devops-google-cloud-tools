@@ -199,7 +199,7 @@ async function deployFunction(auth, location, name, mode, sourceValue) {
   taskLib.debug('Result from operation:');
   taskLib.debug(JSON.stringify(res));
 
-  if (!res.data || !res.data.done) {
+  if (res.status >= 400 || !res.data || !res.data.done) {
     if (res.data.error) {
       taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
       taskLib.debug(res.data.error.details);
@@ -207,7 +207,7 @@ async function deployFunction(auth, location, name, mode, sourceValue) {
     taskLib.setResult(taskLib.TaskResult.Failed);
   }
 
-  return res.data && res.data.done;
+  return res.status === 200 && res.data && res.data.metadata;
 }
 
 /**
