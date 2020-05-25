@@ -196,14 +196,15 @@ async function deployFunction(auth, location, name, mode, sourceValue) {
   taskLib.debug(JSON.stringify(request));
   const res = await cloudFunctions.projects.locations.functions.patch(request);
 
+  taskLib.debug('Result from operation:');
+  taskLib.debug(JSON.stringify(res.data));
+
   if (!res.data || !res.data.done) {
-    taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
+    if (res.data.error) taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
     taskLib.debug(res.data.error.details);
     taskLib.setResult(taskLib.TaskResult.Failed);
   }
 
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res.data));
   return res.data && res.data.done;
 }
 
@@ -387,14 +388,14 @@ async function createFunction(auth, location, name) {
     requestBody: req,
   });
 
+  taskLib.debug('Result from operation:');
+  taskLib.debug(JSON.stringify(res.data));
+
   if (!res.data || !res.data.done) {
-    taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
+    if (res.data.error) taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
     taskLib.debug(res.data.error.details);
     taskLib.setResult(taskLib.TaskResult.Failed);
   }
-
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res.data));
   return res.data;
 }
 
@@ -442,14 +443,15 @@ async function updateFunction(auth, location, name, currentProperties) {
     requestBody: diff,
   });
 
+  taskLib.debug('Result from operation:');
+  taskLib.debug(JSON.stringify(res.data));
+
   if (!res.data || !res.data.done) {
-    taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
+    if (res.data.error) taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
     taskLib.debug(res.data.error.details);
     taskLib.setResult(taskLib.TaskResult.Failed);
   }
 
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res.data));
   return res.data;
 }
 
@@ -491,14 +493,15 @@ async function deleteFunction(auth, location, name) {
     name: `${location}/functions/${name}`,
   });
 
+  taskLib.debug('Result from operation:');
+  taskLib.debug(JSON.stringify(res.data));
+
   if (!res.data || !res.data.done) {
-    taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
+    if (res.data.error) taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
     taskLib.debug(res.data.error.details);
     taskLib.setResult(taskLib.TaskResult.Failed);
   }
 
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res.data));
   return res.data && res.data.done;
 }
 
@@ -578,6 +581,7 @@ async function main() {
 
     // Acquire an auth client, and bind it to all future calls
     const authClient = await auth.getClient();
+    authClient.
     google.options('auth', authClient);
 
     // Get info about credential

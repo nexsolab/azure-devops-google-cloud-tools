@@ -40,6 +40,13 @@ The account informed in Service Connection or JSON key requires the following Go
 - Call
   - `cloudfunctions.functions.call`
 
+Or you can use roles:  
+`roles/cloudfunctions.developer`
+
+Note that you'll need also the roles:  
+- `roles/iam.serviceAccountTokenCreator`
+- `roles/iam.serviceAccountUser`
+
 ## Operations
 
 ### Deploy
