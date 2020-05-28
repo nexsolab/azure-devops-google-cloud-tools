@@ -11,6 +11,27 @@ import deepDiff from 'return-deep-diff';
 const cloudFunctions = google.cloudfunctions('v1');
 
 /**
+ * Check a result of a Rest call and fail task when response is not successful.
+ *
+ * @param {import('gaxios').GaxiosResponse<import('googleapis').cloudfunctions_v1.Schema$Operation>} res The Rest API response
+ * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The metadata of the operation.
+ */
+function checkResultAndGetMetadata(res) {
+  taskLib.debug('Result from operation:');
+  taskLib.debug(JSON.stringify(res));
+
+  if (res.status >= 400 || !res.data) {
+    if (res.data.error) {
+      taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
+      taskLib.debug(res.data.error.details.join('\n'));
+    }
+    taskLib.setResult(taskLib.TaskResult.Failed);
+  }
+
+  return res.data && res.data.metadata;
+}
+
+/**
  * Upload the Zip file with source code to the cloud.
  *
  * @param {*} auth Google Auth Client
@@ -30,6 +51,8 @@ async function uploadFile(auth, project, zipFile) {
   });
 
   const url = storageResult.data && storageResult.data.uploadUrl;
+
+  taskLib.debug(`Upload URL generated: ${url}`);
 
   if (!url) {
     taskLib.warning('Zip File could not be uploaded to Google (empty upload URL)');
@@ -140,6 +163,7 @@ function findMatchingFiles(filepath) {
  * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
+ * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
  */
 async function deployFunction(auth, location, name, mode, sourceValue) {
   const request = {
@@ -195,19 +219,7 @@ async function deployFunction(auth, location, name, mode, sourceValue) {
   taskLib.debug('Requesting GCP with data:');
   taskLib.debug(JSON.stringify(request));
   const res = await cloudFunctions.projects.locations.functions.patch(request);
-
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res));
-
-  if (res.status >= 400 || !res.data || !res.data.done) {
-    if (res.data.error) {
-      taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
-      taskLib.debug(res.data.error.details);
-    }
-    taskLib.setResult(taskLib.TaskResult.Failed);
-  }
-
-  return res.status === 200 && res.data && res.data.metadata;
+  return checkResultAndGetMetadata(res);
 }
 
 /**
@@ -222,7 +234,7 @@ function getInputNumber(name, required = false) {
     const value = taskLib.getInput(name, required);
     return value ? parseFloat(value) : undefined;
   } catch (error) {
-    taskLib.warning(`Error get the number of ${name}: ${error.message}`);
+    taskLib.debug(`Error get the number of ${name}: ${error.message}`);
     return undefined;
   }
 }
@@ -230,7 +242,7 @@ function getInputNumber(name, required = false) {
 /**
  * Check option to create a new or update a Google Cloud Function
  *
- * @returns {Object} The API request body
+ * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The API request body
  */
 async function getCreateResquestBody(location, name) {
   // Request body metadata
@@ -346,39 +358,12 @@ async function getCreateResquestBody(location, name) {
  * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
- * @returns {Boolean} `true` if the Function was created successfully.
+ * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
  */
 async function createFunction(auth, location, name) {
   const req = await getCreateResquestBody(location, name);
   taskLib.debug('Calling Google API to create the function, with the request:');
   taskLib.debug(JSON.stringify(req));
-
-  // Get source mode
-  let sourceValue = '';
-  const sourceMode = taskLib.getInput('funcSourceMode', false) || 'zip';
-
-  switch (sourceMode) {
-    case 'storage': {
-      sourceValue = taskLib.getInput('funcSourceArchive', false);
-      break;
-    }
-
-    case 'repo': {
-      sourceValue = taskLib.getInput('funcSourceRepo', false);
-      break;
-    }
-
-    case 'zip': {
-      sourceValue = taskLib.getPathInput('funcSourceZip', true, true);
-      break;
-    }
-
-    default:
-      break;
-  }
-
-  // Upload source code
-  await deployFunction(auth, location, name, sourceMode, sourceValue);
 
   // Create
   console.log(`Creating function ${location}`);
@@ -390,17 +375,49 @@ async function createFunction(auth, location, name) {
     requestBody: req,
   });
 
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res.data));
+  const createResult = checkResultAndGetMetadata(res);
 
-  if (!res.data || !res.data.done) {
-    if (res.data.error) taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
-    taskLib.debug(res.data.error.details);
-    taskLib.setResult(taskLib.TaskResult.Failed);
+  if (createResult) {
+    console.log('Function created!');
+
+    // Get source mode
+    let sourceValue = '';
+    const sourceMode = taskLib.getInput('funcSourceMode', false) || 'zip';
+
+    switch (sourceMode) {
+      case 'storage': {
+        sourceValue = taskLib.getInput('funcSourceArchive', false);
+        break;
+      }
+
+      case 'repo': {
+        sourceValue = taskLib.getInput('funcSourceRepo', false);
+        break;
+      }
+
+      case 'zip': {
+        sourceValue = taskLib.getPathInput('funcSourceZip', true, true);
+        break;
+      }
+
+      default:
+        break;
+    }
+
+    // Upload source code
+    const deployResult = await deployFunction(auth, location, name, sourceMode, sourceValue);
+    checkResultAndGetMetadata(deployResult);
   }
-  return res.data;
+
+  return createResult;
 }
 
+/**
+ * Get a list of properties from a deep object.
+ *
+ * @param {Object} obj The object to get the keys
+ * @returns {string[]} The paths of object keys.
+ */
 function propertiesToArray(obj) {
   const isObject = (val) => typeof val === 'object' && !Array.isArray(val);
 
@@ -425,7 +442,7 @@ function propertiesToArray(obj) {
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @param {Object} currentProperties Current properties to compare with the changed values
- * @returns {Boolean} `true` if the Function was updated successfully.
+ * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
  */
 async function updateFunction(auth, location, name, currentProperties) {
   taskLib.debug('Update Function');
@@ -438,6 +455,7 @@ async function updateFunction(auth, location, name, currentProperties) {
 
   const changedPropertiesNames = propertiesToArray(diff);
   taskLib.debug(`Changed attributes are the above for ${location}/functions/${name}`);
+  console.log(`Updating function ${req.name}`);
 
   const res = await cloudFunctions.projects.locations.functions.patch({
     auth,
@@ -445,16 +463,9 @@ async function updateFunction(auth, location, name, currentProperties) {
     requestBody: diff,
   });
 
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res.data));
+  console.log('Function updated!');
 
-  if (!res.data || !res.data.done) {
-    if (res.data.error) taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
-    taskLib.debug(res.data.error.details);
-    taskLib.setResult(taskLib.TaskResult.Failed);
-  }
-
-  return res.data;
+  return checkResultAndGetMetadata(res);
 }
 
 /**
@@ -463,7 +474,7 @@ async function updateFunction(auth, location, name, currentProperties) {
  * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
- * @returns {Object} The function body.
+ * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
  */
 async function getFunction(auth, location, name) {
   taskLib.debug(`Check existence of ${location}/functions/${name}`);
@@ -473,6 +484,7 @@ async function getFunction(auth, location, name) {
   });
 
   if (res && res.data && res.status === 200) {
+    console.log(`Function ${location}/functions/${name} exists.`);
     return res.data;
   }
 
@@ -486,7 +498,7 @@ async function getFunction(auth, location, name) {
  * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
- * @returns {Boolean} `true` if the Function was deleted successfully.
+ * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
  */
 async function deleteFunction(auth, location, name) {
   console.log(`Removing Function ${location}/functions/${name}`);
@@ -495,16 +507,7 @@ async function deleteFunction(auth, location, name) {
     name: `${location}/functions/${name}`,
   });
 
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res.data));
-
-  if (!res.data || !res.data.done) {
-    if (res.data.error) taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
-    taskLib.debug(res.data.error.details);
-    taskLib.setResult(taskLib.TaskResult.Failed);
-  }
-
-  return res.data && res.data.done;
+  return checkResultAndGetMetadata(res);
 }
 
 /**
@@ -513,7 +516,7 @@ async function deleteFunction(auth, location, name) {
  * @param {*} auth Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
- * @returns {String} Return the execution Id of function invocation.
+ * @returns {String} Return the response body.
  */
 async function callFunction(auth, location, name) {
   console.log(`Calling Function ${location}/functions/${name}`);
@@ -533,6 +536,19 @@ async function callFunction(auth, location, name) {
   console.log(`Id of the invocation: ${res.data && res.data.executionId}`);
   taskLib.debug(`Result of invocation: ${res.data && res.data.result}`);
   return res.data && res.data.result;
+}
+
+/**
+ * Export task output variables based on the response.
+ *
+ * @param {cloudfunctions_v1.Schema$CloudFunction} result The metadata of the function
+ */
+function setOutput(result) {
+  if (result.httpsTrigger && result.httpsTrigger.url) {
+    taskLib.setVariable('FunctionUrl', result.httpsTrigger.url);
+  }
+
+  taskLib.setVariable('FunctionVersionId', result.versionId);
 }
 
 /**
@@ -622,7 +638,7 @@ async function main() {
 
         // Check if unauthenticated access is allowed
         if (taskLib.getBoolInput('funcHttpsAnonym', false)) {
-          taskLib.debug('Should allow public access');
+          console.log('Enabling public access...');
 
           const res = await cloudFunctions.projects.locations.functions.setIamPolicy({
             resource: `${location}/functions/${name}`,
@@ -639,24 +655,25 @@ async function main() {
           });
 
           taskLib.debug(`Status code of allow anonym access is ${res.status}`);
+
+          if (res && res.data && res.status === 200) {
+            console.log('Public access allowed!');
+          }
         }
 
         // Output vars
-        if (result.httpsTrigger && result.httpsTrigger.url) {
-          taskLib.setVariable('FunctionUrl', result.httpsTrigger.url);
-        }
-
-        taskLib.setVariable('FunctionVersionId', result.versionId);
+        setOutput(result);
 
         // Success?
-        taskSuccess = result.done;
-
+        taskSuccess = ['ACTIVE', 'DEPLOY_IN_PROGRESS'].some((s) => s === result.status);
         break;
       }
 
-      case 'delete':
-        taskSuccess = await deleteFunction(authClient, location, name);
+      case 'delete': {
+        const result = await deleteFunction(authClient, location, name);
+        taskSuccess = ['DELETE_IN_PROGRESS', 'UNKNOWN', 'CLOUD_FUNCTION_STATUS_UNSPECIFIED'].some((s) => s === result.status);
         break;
+      }
 
       case 'deploy': {
         let sourceValue = '';
@@ -682,13 +699,14 @@ async function main() {
             break;
         }
 
-        taskSuccess = await deployFunction(authClient, location, name, sourceMode, sourceValue);
+        const result = await deployFunction(authClient, location, name, sourceMode, sourceValue);
+        taskSuccess = ['ACTIVE', 'DEPLOY_IN_PROGRESS'].some((s) => s === result.status);
         break;
       }
 
       case 'call': {
         const callResult = await callFunction(authClient, location, name);
-        taskSuccess = true;
+        taskSuccess = !!callResult;
         taskLib.setVariable('FunctionCallResult', callResult);
         break;
       }
