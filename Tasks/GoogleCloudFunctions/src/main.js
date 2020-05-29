@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable radix */
+/* eslint max-len: ["error", { "code": 100, "tabWidth": 2, "ignoreComments": true, "ignoreTemplateLiterals": true }] */
 import * as taskLib from 'azure-pipelines-task-lib/task';
 import { google } from 'googleapis';
 import fetch from 'node-fetch';
@@ -146,7 +147,8 @@ function findMatchingFiles(filepath) {
     const allFiles = taskLib.find(findPathRoot);
 
     // Now matching the pattern against all files
-    filesList = taskLib.match(allFiles, filepath, '', { matchBase: true, nocase: !!taskLib.osType().match(/^Win/) });
+    const options = { matchBase: true, nocase: !!taskLib.osType().match(/^Win/) };
+    filesList = taskLib.match(allFiles, filepath, '', options);
 
     // Fail if no matching files were found
     if (!filesList || filesList.length === 0) {
@@ -248,7 +250,7 @@ async function getCreateResquestBody(location, name) {
   // Request body metadata
   const requestBody = {
     availableMemoryMb: getInputNumber('funcMemory', false),
-    description: taskLib.getInput('funcDesc', true),
+    description: taskLib.getInput('funcDesc', false),
     entryPoint: taskLib.getInput('funcEntryPoint', true),
     environmentVariables: {},
     maxInstances: getInputNumber('funcMaxInstances', false),
@@ -262,8 +264,10 @@ async function getCreateResquestBody(location, name) {
   const envVarList = taskLib.getInput('funcEnvVars', false);
 
   if (envVarList && envVarList.indexOf('-') >= 0) {
+    requestBody.environmentVariables = {};
     const varsArray = envVarList.split('-').splice(1).map((p) => p.trim().split(' '));
-    requestBody.environmentVariables = Object.fromEntries(new Map(varsArray));
+    // eslint-disable-next-line prefer-destructuring
+    varsArray.forEach((x) => { requestBody.environmentVariables[x[0]] = x[1]; });
     taskLib.debug('Environment variables are mapped to:');
     taskLib.debug(JSON.stringify(requestBody.environmentVariables));
   }
@@ -309,22 +313,22 @@ async function getCreateResquestBody(location, name) {
   const networkMode = taskLib.getInput('networkMode', false);
 
   if (networkMode === 'vpc') {
-    const network = taskLib.getInput('funcNetwork', true);
+    const network = taskLib.getInput('funcNetwork', false);
     taskLib.debug(`Set ${network} as network for the function`);
     requestBody.network = network;
   } else if (networkMode === 'connector') {
     // Connector
-    const vpcConnector = taskLib.getInput('funcVpcConnector', true);
+    const vpcConnector = taskLib.getInput('funcVpcConnector', false);
     taskLib.debug(`Set ${vpcConnector} as VPC Connector for Functions`);
     requestBody.vpcConnector = vpcConnector;
 
     // Egress Settings
-    const vpcConnectorEgress = taskLib.getInput('funcVpcConnectorEgress', true);
+    const vpcConnectorEgress = taskLib.getInput('funcVpcConnectorEgress', false);
     taskLib.debug(`VPC Connector egress setting is ${vpcConnectorEgress}`);
     requestBody.vpcConnectorEgressSettings = vpcConnectorEgress;
 
     // Ingress Settings
-    const vpcConnectorIngress = taskLib.getInput('funcVpcConnectorIngress', true);
+    const vpcConnectorIngress = taskLib.getInput('funcVpcConnectorIngress', false);
     taskLib.debug(`VPC Connector ingress setting is ${vpcConnectorIngress}`);
     requestBody.ingressSettings = vpcConnectorIngress;
   }
@@ -478,17 +482,22 @@ async function updateFunction(auth, location, name, currentProperties) {
  */
 async function getFunction(auth, location, name) {
   taskLib.debug(`Check existence of ${location}/functions/${name}`);
-  const res = await cloudFunctions.projects.locations.functions.get({
-    auth,
-    name: `${location}/functions/${name}`,
-  });
+  try {
+    const res = await cloudFunctions.projects.locations.functions.get({
+      auth,
+      name: `${location}/functions/${name}`,
+    });
 
-  if (res && res.data && res.status === 200) {
-    console.log(`Function ${location}/functions/${name} exists.`);
-    return res.data;
+    if (res && res.data && res.status === 200) {
+      console.log(`Function ${location}/functions/${name} exists.`);
+      return res.data;
+    }
+
+    taskLib.debug(`getFunction return the status code: ${res.status}`);
+  } catch (error) {
+    taskLib.debug(`Check error: ${error.message}`);
   }
 
-  taskLib.debug(`getFunction return the status code: ${res.status}`);
   return null;
 }
 
@@ -671,7 +680,10 @@ async function main() {
 
       case 'delete': {
         const result = await deleteFunction(authClient, location, name);
-        taskSuccess = ['DELETE_IN_PROGRESS', 'UNKNOWN', 'CLOUD_FUNCTION_STATUS_UNSPECIFIED'].some((s) => s === result.status);
+        taskSuccess = [
+          'DELETE_IN_PROGRESS',
+          'UNKNOWN',
+          'CLOUD_FUNCTION_STATUS_UNSPECIFIED'].some((s) => s === result.status);
         break;
       }
 
