@@ -1,0 +1,15 @@
+{
+  "name": "functionexample",
+  "version": "1.0.0",
+  "description": "Example function to tests purpose in the Google Cloud Function tasks",
+  "main": "index.js",
+  "scripts": {
+    "start": "functions-framework --target=api",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gabriel Anderson",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^1.5.1"
+  }
+}

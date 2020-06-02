@@ -13,7 +13,7 @@
   "instanceNameFormat": "Cloud Function - $(operation) $(funcName)",
   "version": {
     "Major": 0,
-    "Minor": 5,
+    "Minor": 6,
     "Patch": 0
   },
   "groups": [{
@@ -25,7 +25,8 @@
     {
       "name": "GCPResourceOptions",
       "displayName": "Google Cloud resource options",
-      "isExpanded": false
+      "isExpanded": false,
+      "visibleRule": "operation = create"
     }
   ],
   "inputs": [{
@@ -105,7 +106,7 @@
       "type": "multiLine",
       "label": "Input to be passed to the function.",
       "defaultValue": "",
-      "required": true,
+      "required": false,
       "helpMarkDown": "Data could be a string or a JSON (started by `[` or `{` chars).<br />**Note about execution:**<br />Synchronously invokes a deployed Cloud Function. To be used for testing purposes as very limited traffic is allowed. For more information on the actual limits, refer to [Rate Limits](https://cloud.google.com/functions/quotas#rate_limits).",
       "visibleRule": "operation = call"
     },
@@ -279,12 +280,19 @@
     },
     {
       "name": "funcMemory",
-      "type": "string",
+      "type": "pickList",
       "label": "Memory (in MB)",
       "groupName": "FunctionCreation",
       "defaultValue": "256",
       "required": false,
-      "helpMarkDown": "The amount of memory in MB available for a function. Defaults to 256MB."
+      "helpMarkDown": "The amount of memory in MB available for a function. Defaults to 256MB.",
+      "options": {
+        "128": "128MB",
+        "256": "256MB",
+        "512": "512MB",
+        "1024": "1024MB",
+        "2048": "2048MB"
+      }
     },
     {
       "name": "funcMaxInstances",
@@ -464,6 +472,7 @@
       "description": "Result of function invocation. (if the operation = Call)"
     }
   ],
+  "minimumAgentVersion": "2.144.0",
   "execution": {
     "Node10": {
       "target": "main.js",
