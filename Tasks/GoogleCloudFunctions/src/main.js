@@ -682,7 +682,14 @@ async function main() {
             break;
         }
 
-        taskSuccess = await deployFunction(authClient, location, name, sourceMode, sourceValue);
+        const result = await deployFunction(authClient, location, name, sourceMode, sourceValue);
+
+        // Output vars
+        if (result.httpsTrigger && result.httpsTrigger.url) {
+          taskLib.setVariable('FunctionUrl', result.httpsTrigger.url);
+        }
+
+        taskSuccess = !!result;
         break;
       }
 
