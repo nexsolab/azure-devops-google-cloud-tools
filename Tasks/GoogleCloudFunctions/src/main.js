@@ -459,10 +459,12 @@ async function updateFunction(auth, location, name, currentProperties) {
 
   const changedPropertiesNames = propertiesToArray(diff);
   taskLib.debug(`Changed attributes are the above for ${location}/functions/${name}`);
+  taskLib.debug(changedPropertiesNames.join('\\n'));
   console.log(`Updating function ${req.name}`);
 
   const res = await cloudFunctions.projects.locations.functions.patch({
     auth,
+    name: `${location}/functions/${name}`,
     updateMask: changedPropertiesNames.join(','),
     requestBody: diff,
   });
@@ -574,7 +576,17 @@ async function main() {
 
     if (authMethod === 'serviceAccount') {
       const account = taskLib.getInput('SCserviceAccount', true);
-      jsonCredential = taskLib.getEndpointAuthorizationParameter(account, 'certificate', false);
+      const schema = taskLib.getEndpointAuthorizationScheme(account);
+      taskLib.debug(`Authorization schema is ${schema}`);
+
+      if (schema === 'ms.vss-endpoint.endpoint-auth-scheme-oauth2') {
+        const authSc = taskLib.getEndpointAuthorization(account);
+        taskLib.debug(JSON.stringify(authSc));
+      } else {
+        jsonCredential = taskLib.getEndpointAuthorizationParameter(account, 'certificate', false);
+        taskLib.debug('Recovered JSON file contents');
+      }
+
       taskLib.debug('Using Service Connection authentication');
     } else if (authMethod === 'jsonFile') {
       const secureFileId = taskLib.getInput('jsonCredentials', true);
