@@ -343,11 +343,11 @@ async function getCreateResquestBody(location, name) {
     taskLib.debug(labels);
   } else if (labels && labels.indexOf('-') >= 0) {
     // Editor
+    requestBody.labels = {};
     const labelsArray = labels.split('-').splice(1).map((p) => p.trim().split(' '));
-    requestBody.labels = Object.fromEntries(new Map(labelsArray));
-    taskLib.debug('Parse parameters grid as resource labels:');
-    taskLib.debug(labels);
-    taskLib.debug('...that produces this JSON of labels:');
+    // eslint-disable-next-line prefer-destructuring
+    labelsArray.forEach((x) => { requestBody.labels[x[0]] = x[1]; });
+    taskLib.debug('Labels are:');
     taskLib.debug(JSON.stringify(requestBody.labels));
   }
 
