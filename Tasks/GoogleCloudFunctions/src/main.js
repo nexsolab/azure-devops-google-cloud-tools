@@ -452,18 +452,23 @@ async function updateFunction(auth, location, name, currentProperties) {
   taskLib.debug('Update Function');
   const req = await getCreateResquestBody(location, name);
 
-  // Get only the differences
+  // Names can be updated
+  delete req.name;
+
+  // Get only the differences, including new props
   const diff = deepDiff(currentProperties, req, true);
-  taskLib.debug('Changed properties of the existing Function are:');
+  taskLib.debug(`Changed properties of the existing function are: ${propertiesToArray(diff).join(',')}`);
   taskLib.debug(JSON.stringify(diff));
 
-  const changedPropertiesNames = propertiesToArray(diff);
-  taskLib.debug(`Changed attributes are the above for ${location}/functions/${name}`);
-  console.log(`Updating function ${req.name}`);
+  // Get only changed props
+  const changedProps = deepDiff(currentProperties, req);
+  const updateMask = propertiesToArray(changedProps).join(',');
+  taskLib.debug(`Changed attributes are: ${updateMask}`);
+  console.log(`Updating function ${location}/functions/${name}`);
 
   const res = await cloudFunctions.projects.locations.functions.patch({
     auth,
-    updateMask: changedPropertiesNames.join(','),
+    updateMask,
     requestBody: diff,
   });
 
@@ -731,7 +736,7 @@ async function main() {
     taskLib.setVariable('FunctionName', `${location}/functions/${name}`);
   } catch (error) {
     console.error(`Failed: ${error.message}`);
-    taskLib.debug(error.stack);
+    taskLib.debug(error);
   }
 
   if (taskSuccess) {
