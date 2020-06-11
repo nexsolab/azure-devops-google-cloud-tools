@@ -43,20 +43,66 @@
           "resultSelector": "jsonpath:$.locations[*].locationId"
         }],
         "authenticationSchemes": [{
-          "type": "ms.vss-endpoint.endpoint-auth-scheme-cert",
-          "displayName": "JSON Key file contents",
-          "inputDescriptors": [{
-            "id": "certificate",
-            "name": "Json Text",
-            "description": "The contents of the json key file",
-            "inputMode": "TextArea",
-            "isConfidential": true,
-            "validation": {
-              "isRequired": true,
-              "dataType": "string"
+            "id": "endpoint-json",
+            "type": "ms.vss-endpoint.endpoint-auth-scheme-cert",
+            "displayName": "JSON Key file contents",
+            "inputDescriptors": [{
+              "id": "certificate",
+              "name": "Json Text",
+              "description": "The contents of the json key file",
+              "inputMode": "TextArea",
+              "isConfidential": true,
+              "validation": {
+                "isRequired": true,
+                "dataType": "string"
+              }
+            }]
+          },
+          {
+            "type": "ms.vss-endpoint.endpoint-auth-scheme-oauth2",
+            "displayName": "User Account (OAuth2)",
+            "authorizationUrl": "{{{configuration.Url}}}/login/oauth/authorize?client_id={{{configuration.ClientId}}}&scope=repo,user,admin:repo_hook",
+            "dataSourceBindings": [{
+              "target": "AccessToken",
+              "endpointUrl": "{{{configuration.Url}}}/login/oauth/access_token",
+              "requestVerb": "Post",
+              "requestContent": "{\"client_id\":\"{{{configuration.ClientId}}}\",\"client_secret\":\"{{{configuration.ClientSecret}}}\",\"code\":\"{{{configuration.AuthorizationCode}}}\"}",
+              "resultSelector": "jsonpath:$",
+              "resultTemplate": "{\"AccessToken\" : \"{{{access_token}}}\", \"Error\" : \"{{{error}}}\", \"ErrorDescription\" : \"{{{error_description}}}\"}"
+            }],
+            "inputDescriptors": []
+          },
+          {
+            "id": "endpoint-auth-scheme-oauth2",
+            "description": "User Account (OAuth)",
+            "type": "ms.vss-endpoint.service-endpoint-auth-scheme",
+            "targets": ["ms.vss-endpoint.endpoint-auth-schemes"],
+            "properties": {
+              "name": "GCPOAuth2",
+              "displayName": "GCP OAuth2",
+              "authorizationUrl": "",
+              "dataSourceBindings": [{
+                "target": "AccessToken",
+                "endpointUrl": "",
+                "requestVerb": "",
+                "requestContent": "",
+                "resultSelector": "",
+                "resultTemplate": ""
+              }],
+              "inputDescriptors": [{
+                "id": "apitoken",
+                "name": "API Key",
+                "description": "",
+                "inputMode": "textbox",
+                "isConfidential": true,
+                "validation": {
+                  "isRequired": true,
+                  "dataType": "string"
+                }
+              }]
             }
-          }]
-        }],
+          }
+        ],
         "helpMarkDown": "[Get Json Key File](https://console.cloud.google.com/iam-admin/serviceaccounts)"
       }
     },

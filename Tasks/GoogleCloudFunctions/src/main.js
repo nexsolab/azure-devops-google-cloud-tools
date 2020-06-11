@@ -343,11 +343,11 @@ async function getCreateResquestBody(location, name) {
     taskLib.debug(labels);
   } else if (labels && labels.indexOf('-') >= 0) {
     // Editor
+    requestBody.labels = {};
     const labelsArray = labels.split('-').splice(1).map((p) => p.trim().split(' '));
-    requestBody.labels = Object.fromEntries(new Map(labelsArray));
-    taskLib.debug('Parse parameters grid as resource labels:');
-    taskLib.debug(labels);
-    taskLib.debug('...that produces this JSON of labels:');
+    // eslint-disable-next-line prefer-destructuring
+    labelsArray.forEach((x) => { requestBody.labels[x[0]] = x[1]; });
+    taskLib.debug('Labels are:');
     taskLib.debug(JSON.stringify(requestBody.labels));
   }
 
@@ -468,6 +468,7 @@ async function updateFunction(auth, location, name, currentProperties) {
 
   const res = await cloudFunctions.projects.locations.functions.patch({
     auth,
+    name: `${location}/functions/${name}`,
     updateMask,
     requestBody: diff,
   });
@@ -579,7 +580,17 @@ async function main() {
 
     if (authMethod === 'serviceAccount') {
       const account = taskLib.getInput('SCserviceAccount', true);
-      jsonCredential = taskLib.getEndpointAuthorizationParameter(account, 'certificate', false);
+      const schema = taskLib.getEndpointAuthorizationScheme(account);
+      taskLib.debug(`Authorization schema is ${schema}`);
+
+      if (schema === 'ms.vss-endpoint.endpoint-auth-scheme-oauth2') {
+        const authSc = taskLib.getEndpointAuthorization(account);
+        taskLib.debug(JSON.stringify(authSc));
+      } else {
+        jsonCredential = taskLib.getEndpointAuthorizationParameter(account, 'certificate', false);
+        taskLib.debug('Recovered JSON file contents');
+      }
+
       taskLib.debug('Using Service Connection authentication');
     } else if (authMethod === 'jsonFile') {
       const secureFileId = taskLib.getInput('jsonCredentials', true);
