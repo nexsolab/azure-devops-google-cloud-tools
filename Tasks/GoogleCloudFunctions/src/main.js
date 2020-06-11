@@ -663,26 +663,32 @@ async function main() {
 
         // Check if unauthenticated access is allowed
         if (taskLib.getBoolInput('funcHttpsAnonym', false)) {
-          console.log('Enabling public access...');
+          try {
+            console.log('Enabling public access...');
 
-          const res = await cloudFunctions.projects.locations.functions.setIamPolicy({
-            resource: `${location}/functions/${name}`,
-            requestBody: {
-              policy: {
-                bindings: [
-                  {
-                    role: 'roles/cloudfunctions.invoker',
-                    members: ['allUsers'],
-                  },
-                ],
+            const res = await cloudFunctions.projects.locations.functions.setIamPolicy({
+              auth: authClient,
+              resource: `${location}/functions/${name}`,
+              requestBody: {
+                policy: {
+                  bindings: [
+                    {
+                      role: 'roles/cloudfunctions.invoker',
+                      members: ['allUsers'],
+                    },
+                  ],
+                },
               },
-            },
-          });
+            });
 
-          taskLib.debug(`Status code of allow anonym access is ${res.status}`);
+            taskLib.debug(`Status code of allow anonym access is ${res.status}`);
 
-          if (res && res.data && res.status === 200) {
-            console.log('Public access allowed!');
+            if (res && res.data && res.status === 200) {
+              console.log('Public access allowed!');
+            }
+          } catch (error) {
+            taskLib.warning(`Error at allowing public access: ${error.message}`);
+            taskLib.debug(error);
           }
         }
 
