@@ -457,11 +457,22 @@ async function updateFunction(auth, location, name, currentProperties) {
 
   // Get only the differences, including new props
   const diff = deepDiff(currentProperties, req, true);
-  taskLib.debug(`Changed properties of the existing function are: ${propertiesToArray(diff).join(',')}`);
+  taskLib.debug(`Changed or new properties of the existing function are: ${propertiesToArray(diff).join(',')}`);
   taskLib.debug(JSON.stringify(diff));
 
+  // Nothing changed
+  if (!diff) {
+    console.log('Nothing was changed in the function.');
+    return checkResultAndGetMetadata({
+      status: 200,
+      data: {
+        metadata: currentProperties,
+      },
+    });
+  }
+
   // Get only changed props
-  const changedProps = deepDiff(currentProperties, req);
+  const changedProps = deepDiff(currentProperties, req) || {};
   const updateMask = propertiesToArray(changedProps).join(',');
   taskLib.debug(`Changed attributes are: ${updateMask}`);
   console.log(`Updating function ${location}/functions/${name}`);
