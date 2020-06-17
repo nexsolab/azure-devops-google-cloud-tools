@@ -656,6 +656,9 @@ async function main() {
 
     switch (op) {
       case 'create': {
+        /**
+         * @type {import('googleapis').cloudfunctions_v1.Schema$OperationMetadataV1}
+         */
         let result = null;
         taskLib.debug(`Project: ${location}, Function name: ${name}`);
 
@@ -707,7 +710,7 @@ async function main() {
         setOutput(result);
 
         // Success?
-        taskSuccess = ['ACTIVE', 'DEPLOY_IN_PROGRESS'].some((s) => s === result.status);
+        taskSuccess = ['ACTIVE', 'DEPLOY_IN_PROGRESS'].some((s) => s === result.request.status);
         break;
       }
 
@@ -716,7 +719,7 @@ async function main() {
         taskSuccess = [
           'DELETE_IN_PROGRESS',
           'UNKNOWN',
-          'CLOUD_FUNCTION_STATUS_UNSPECIFIED'].some((s) => s === result.status);
+          'CLOUD_FUNCTION_STATUS_UNSPECIFIED'].some((s) => s === result.request.status);
         break;
       }
 
@@ -745,7 +748,7 @@ async function main() {
         }
 
         const result = await deployFunction(authClient, location, name, sourceMode, sourceValue);
-        taskSuccess = ['ACTIVE', 'DEPLOY_IN_PROGRESS'].some((s) => s === result.status);
+        taskSuccess = ['ACTIVE', 'DEPLOY_IN_PROGRESS'].some((s) => s === result.request.status);
         break;
       }
 
