@@ -43,9 +43,10 @@ The account informed in Service Connection or JSON key requires the following Go
 Or you can use roles:  
 `roles/cloudfunctions.developer`
 
-Note that you'll need also the roles:  
+Note that you'll also need the roles:  
 - `roles/iam.serviceAccountTokenCreator`
-- `roles/iam.serviceAccountUser`
+- `roles/iam.serviceAccountUser`  
+You may need `cloudfunctions.functions.setIamPolicy` permission if you want to enable public access on your function (or the role `roles/cloudfunctions.admin` instead `developer`).
 
 ## Operations
 

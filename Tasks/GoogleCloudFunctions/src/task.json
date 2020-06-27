@@ -42,7 +42,7 @@
     },
     {
       "name": "SCserviceAccount",
-      "type": "connectedService:GoogleCloudServiceEndpoint",
+      "type": "connectedService:GCPToolsServiceEndpoint",
       "label": "Google Cloud Service Account",
       "defaultValue": "",
       "required": true,
