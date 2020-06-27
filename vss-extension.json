@@ -28,7 +28,7 @@
       "type": "ms.vss-endpoint.service-endpoint-type",
       "targets": ["ms.vss-endpoint.endpoint-types"],
       "properties": {
-        "name": "GoogleCloudServiceEndpoint",
+        "name": "GCPToolsServiceEndpoint",
         "displayName": "Google Cloud Platform",
         "authorizationUrl": "",
         "url": {
