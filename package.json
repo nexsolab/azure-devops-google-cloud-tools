@@ -7,7 +7,8 @@
     "test": "mocha test --reporter mocha-junit-reporter",
     "create": "tfx extension create --manifest-globs vss-extension.json",
     "createv": "tfx extension create --manifest-globs vss-extension.json --rev-version",
-    "share": "tfx extension publish --manifest-globs vss-extension.json --rev-version --share-with nexsobr"
+    "share": "tfx extension publish --manifest-globs vss-extension.json --rev-version --share-with nexsobr",
+    "valid": "tfx extension isvalid --manifest-globs vss-extension.json"
   },
   "repository": {
     "type": "git",
