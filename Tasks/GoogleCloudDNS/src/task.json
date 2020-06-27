@@ -1,0 +1,140 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
+  "id": "XXXXXXX",
+  "name": "GoogleCloudDNS",
+  "friendlyName": "Google Cloud DNS Records",
+  "description": "Create or manage DNS records in Google Cloud",
+  "helpUrl": "https://github.com/nexsolab/azure-devops-google-cloud-tools",
+  "helpMarkDown": "[Learn more about this task](https://github.com/nexsolab/azure-devops-google-cloud-tools#readme) or [see the Functions documentation](https://cloud.google.com/sdk/gcloud/reference/dns/record-sets)",
+  "category": "Deploy",
+  "runsOn": ["Agent"],
+  "visibility": ["Build", "Release"],
+  "author": "Gabriel Anderson",
+  "instanceNameFormat": "Cloud DNS - $(operation) $(recordName)",
+  "version": {
+    "Major": 0,
+    "Minor": 6,
+    "Patch": 0
+  },
+  "groups": [],
+  "inputs": [{
+      "name": "authenticationMethod",
+      "type": "pickList",
+      "label": "Authentication method",
+      "defaultValue": "serviceAccount",
+      "options": {
+        "serviceAccount": "Service Account (Connected Service)",
+        "jsonFile": "JSON file credentials"
+      },
+      "helpMarkDown": "Authorization requires the following Google IAM permission on the specified resources:<br />`cloudfunctions.functions.call`<br />`cloudfunctions.functions.create`<br />`cloudfunctions.functions.delete`<br />`cloudfunctions.functions.get`<br />`cloudfunctions.functions.sourceCodeSet`"
+    },
+    {
+      "name": "SCserviceAccount",
+      "type": "connectedService:GoogleCloudServiceEndpoint",
+      "label": "Google Cloud Service Account",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Select the Service Account that should be used for the next steps",
+      "visibleRule": "authenticationMethod = serviceAccount"
+    },
+    {
+      "name": "jsonCredentials",
+      "type": "secureFile",
+      "label": "JSON Credentials file",
+      "required": true,
+      "defaultValue": "",
+      "helpMarkDown": "Select the JSON file with the credentials, see for more information",
+      "visibleRule": "authenticationMethod = jsonFile"
+    },
+    {
+      "name": "operation",
+      "type": "pickList",
+      "label": "Operation",
+      "required": true,
+      "defaultValue": "deploy",
+      "options": {
+        "create": "Add",
+        "delete": "Remove",
+        "value": "Get record value"
+      }
+    },
+    {
+      "name": "gcpProject",
+      "type": "pickList",
+      "label": "Project",
+      "defaultValue": "",
+      "required": true,
+      "properties": {
+        "EditableOptions": "True"
+      },
+      "helpMarkDown": "Enter or select the Project where this function should be created."
+    },
+    {
+      "name": "recordZone",
+      "type": "string",
+      "label": "Zone",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Name of the managed-zone whose record-sets you want to manage.",
+      "visibleRule": "operation = add"
+    },
+    {
+      "name": "recordName",
+      "type": "string",
+      "label": "DNS",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "DNS or domain name of the record-set to add."
+    },
+    {
+      "name": "recordType",
+      "type": "pickList",
+      "label": "Type",
+      "defaultValue": "A",
+      "required": true,
+      "options": {
+        "A": "A - host to IPv4",
+        "AAAA": "AAAA - host to IPv6",
+        "CNAME": "CNAME (Canonical Name) - host to host",
+        "MX": "MX (Mail Exchange)",
+        "TXT": "TXT (Text)"
+      },
+      "properties": {
+        "EditableOptions": "True"
+      },
+      "visibleRule": "operation = add"
+    },
+    {
+      "name": "recordValue",
+      "type": "string",
+      "label": "Value of the record",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "The record value. i.e. If type A: '1.2.3.4', type CNAME: 'other.site.com'...",
+      "visibleRule": "funcTrigger = topic"
+    },
+    {
+      "name": "recordTtl",
+      "type": "string",
+      "label": "TTL (time to live) - in seconds",
+      "defaultValue": "5",
+      "required": true,
+      "helpMarkDown": "Number of seconds that this record can be cached by resolvers.",
+      "visibleRule": "operation = add"
+    }
+  ],
+  "OutputVariables": [
+    {
+      "name": "DnsRecordValue",
+      "description": "The current data value of the record."
+    }
+  ],
+  "minimumAgentVersion": "2.144.0",
+  "execution": {
+    "Node10": {
+      "target": "main.js",
+      "argumentFormat": ""
+    }
+  },
+  "messages": {}
+}

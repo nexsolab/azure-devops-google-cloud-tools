@@ -1,0 +1,36 @@
+{
+  "name": "googleclouddns",
+  "version": "1.0.0",
+  "description": "Manage Google Cloud DNS regions and records",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "azure",
+    "devops",
+    "pipelines",
+    "release",
+    "gcloud",
+    "cli",
+    "google",
+    "cloud",
+    "platform",
+    "gcp",
+    "deploy",
+    "task",
+    "iac",
+    "dns",
+    "record",
+    "url"
+  ],
+  "author": {
+    "name": "Gabriel Anderson",
+    "url": "https://github.com/gcacars"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "azure-pipelines-task-lib": "^2.9.3",
+    "googleapis": "^52.1.0"
+  }
+}
