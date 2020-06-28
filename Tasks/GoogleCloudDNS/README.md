@@ -30,13 +30,11 @@ All operations export `FunctionName` output variable as the full resource name o
 
 The account informed in Service Connection or JSON key requires the following Google IAM permission on the specified resources (grouped by operation type):
 - Create/Update
-  - `cloudfunctions.functions.create`
-  - `cloudfunctions.functions.get`
-  - `cloudfunctions.functions.sourceCodeSet`
+  - `ndev.clouddns.readwrite`
 - Delete
   - `cloudfunctions.functions.delete`
-- Deploy
-  - `cloudfunctions.functions.sourceCodeSet`
+- Get record value
+  - `ndev.clouddns.readwrite`
 - Call
   - `cloudfunctions.functions.call`
 

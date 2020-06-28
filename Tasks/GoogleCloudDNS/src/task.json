@@ -87,6 +87,23 @@
       "helpMarkDown": "DNS or domain name of the record-set to add."
     },
     {
+      "name": "outputTemplate",
+      "type": "pickList",
+      "label": "Output template",
+      "defaultValue": "typeval",
+      "required": true,
+      "options": {
+        "typeval": "Type|Value (i.e. A|192.168.0.1,192.168.0.2",
+        "firstval": "First value (i.e. 192.168.0.1)",
+        "json": "Full JSON (i.e {\"name\": \"example.com\", \"type\": \"A\"...)"
+      },
+      "properties": {
+        "EditableOptions": "True"
+      },
+      "helpMarkDown": "The template of the value for the record set to be exported as an environment variable. [Cloud DNS Docs](https://cloud.google.com/dns/docs/reference/v1/resourceRecordSets/list)",
+      "visibleRule": "operation = add"
+    },
+    {
       "name": "recordType",
       "type": "pickList",
       "label": "Type",

@@ -9,7 +9,7 @@ const dns = google.dns('v1');
  * Check a result of a Rest call and fail task when response is not successful.
  *
  * @param {import('gaxios').GaxiosResponse<import('googleapis').dns_v1.Schema$Operation>} res The Rest API response
- * @returns {import('googleapis').dns_v1.Schema$Change} The metadata of the operation.
+ * @returns {import('googleapis').dns_v1.Schema$Change|import('googleapis').dns_v1.Schema$ResourceRecordSetsListResponse} The metadata of the operation.
  */
 function checkResultAndGetMetadata(res) {
   taskLib.debug('Result from operation:');
@@ -26,16 +26,30 @@ function checkResultAndGetMetadata(res) {
   return res.data && res.data.metadata;
 }
 
-async function addRecord(auth, project, managedZone, name, type, ttl, value) {
-  console.log(`Adding record ${name} to ${managedZone}`);
+/**
+ * Add or remove a DNS record set.
+ *
+ * @author Gabriel Anderson
+ * @param {('create'|'delete')} operation Should create or remove a record?
+ * @param {*} auth Google Auth Client
+ * @param {string} project The GCP project where managed zone is
+ * @param {string} managedZone The managed zone of the record
+ * @param {string} name The name (address) of the record (for example www.example.com.)
+ * @param {string} type The identifier of a supported record type.
+ * @param {number} ttl Number of seconds that this ResourceRecordSet can be cached by resolvers.
+ * @param {string} value The value of the record (like IP address if it is a record of type A)
+ * @returns {import('googleapis').dns_v1.Schema$Change} The change result.
+ */
+async function changeRecord(operation, auth, project, managedZone, name, type, ttl, value) {
+  console.log(`Adding record ${name} to ${managedZone} - ${project}`);
+  const opAttributeName = operation === 'delete' ? 'deletions' : 'additions';
   const res = await dns.changes.create({
     auth,
     project,
     managedZone,
-    isServing: true,
-    resource: {
+    requestBody: {
       kind: 'dns#change',
-      additions: [
+      [opAttributeName]: [
         {
           kind: 'dns#resourceRecordSet',
           name,
@@ -47,20 +61,51 @@ async function addRecord(auth, project, managedZone, name, type, ttl, value) {
     },
   });
 
+  // Already exists, just show a warning
+  if (res.status === 409) {
+    console.warn(`The record ${name} - ${type}: ${value} already exists.`);
+    return {
+      name,
+    };
+  }
+
   return checkResultAndGetMetadata(res);
 }
 
-async function getRecordValue(auth, project, managedZone) {}
+/**
+ * Get the JSON value from a record.
+ *
+ * @author Gabriel Anderson
+ * @param {*} auth Google Auth Client
+ * @param {string} project The GCP project where managed zone is
+ * @param {string} managedZone The managed zone of the record
+ * @param {string} name The name (address) of the record (for example www.example.com.)
+ * @returns {import('googleapis').dns_v1.Schema$ResourceRecordSetsListResponse} The record set data.
+ */
+async function getRecord(auth, project, managedZone, name) {
+  // check if name ends in dot
+  const fixedName = (name.substr(-1) === '.') ? name : `${name}.`;
+  console.log(`Checkin value for ${fixedName} in ${managedZone} - ${project}`);
+
+  const res = await dns.resourceRecordSets.list({
+    auth,
+    project,
+    managedZone,
+    name: fixedName,
+  });
+
+  return checkResultAndGetMetadata(res);
+}
 
 /**
  * Main function
  *
  */
 async function main() {
-  // gcloud dns record-sets transaction add "1.2.3.4" --name="x.example.com" --ttl=1234 --type=A --zone=ZONE
   let taskSuccess = false;
 
   try {
+    // #region auth
     // Get authentication method
     let jsonCredential = '';
     const authMethod = taskLib.getInput('authenticationMethod', true);
@@ -119,6 +164,7 @@ async function main() {
     } else {
       taskLib.debug('Authenticated (JSON could not be read.');
     }
+    // #endregion auth
 
     // Check operation
     const op = taskLib.getInput('operation', false);
@@ -129,14 +175,52 @@ async function main() {
     const name = taskLib.getInput('recordName', true);
 
     switch (op) {
-      case 'add':
-        const result = await addRecord(authClient, projectId, zone, name);
+      case 'add': {
+        const type = taskLib.getInput('recordType', true);
+        // eslint-disable-next-line radix
+        const ttl = parseInt(taskLib.getInput('recordTtl', true));
+        const value = taskLib.getInput('recordValue', true);
+
+        const result = await changeRecord('create', authClient, projectId, zone, name, type, ttl, value);
+        taskSuccess = result && result.name;
         break;
+      }
+
+      case 'delete': {
+        const result = await changeRecord('delete', authClient, projectId, zone, name);
+        taskSuccess = result && result.name;
+        break;
+      }
 
       case 'value': {
-        const callResult = await callFunction(authClient, location, name);
-        taskSuccess = !!callResult;
-        taskLib.setVariable('FunctionCallResult', callResult);
+        const result = await getRecord(authClient, projectId, zone, name);
+        taskSuccess = result.rrsets.length > 0;
+
+        if (taskSuccess) {
+          let outputVal = '';
+          const outputTemplate = taskLib.getInput('outputTemplate', false) || 'typeval';
+
+          switch (outputTemplate) {
+            case 'typeval':
+              outputVal = `${result.rrsets[0].type}|${result.rrsets[0].rrdatas.join(',')}`;
+              break;
+
+            case 'firstval':
+              // eslint-disable-next-line prefer-destructuring
+              outputVal = result.rrsets[0].rrdatas[0];
+              break;
+
+            case 'json':
+              outputVal = JSON.stringify(result.rrsets[0]);
+              break;
+
+            default:
+              break;
+          }
+
+          taskLib.setVariable('DnsRecordValue', outputVal);
+        }
+
         break;
       }
 
