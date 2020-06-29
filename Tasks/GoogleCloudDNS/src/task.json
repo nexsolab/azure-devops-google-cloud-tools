@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
-  "id": "XXXXXXX",
+  "id": "7cef15d7-c384-4630-bb5c-b2c27ac02a9e",
   "name": "GoogleCloudDNS",
   "friendlyName": "Google Cloud DNS Records",
   "description": "Create or manage DNS records in Google Cloud",
