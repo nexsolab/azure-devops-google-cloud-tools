@@ -32,6 +32,6 @@
   "dependencies": {
     "azure-pipelines-task-lib": "^2.9.3",
     "googleapis": "^52.1.0",
-    "securefiles-common": "file:../Common/securefiles-common.tar"
+    "securefiles-common": "file:../Common/securefiles-common"
   }
 }
