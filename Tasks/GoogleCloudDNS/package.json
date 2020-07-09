@@ -4,7 +4,12 @@
   "description": "Manage Google Cloud DNS regions and records",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx babel src --out-dir dist --source-maps --copy-files --no-copy-ignored --ignore node_modules/**/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS"
   },
   "keywords": [
     "azure",
@@ -17,7 +22,6 @@
     "cloud",
     "platform",
     "gcp",
-    "deploy",
     "task",
     "iac",
     "dns",
@@ -28,10 +32,41 @@
     "name": "Gabriel Anderson",
     "url": "https://github.com/gcacars"
   },
-  "license": "ISC",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
+  },
+  "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS#readme",
   "dependencies": {
     "azure-pipelines-task-lib": "^2.9.3",
     "googleapis": "^52.1.0",
     "securefiles-common": "file:../Common/securefiles-common"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "6.10"
+          }
+        }
+      ]
+    ],
+    "plugins": [],
+    "env": {
+      "debug": {
+        "sourceMaps": "inline",
+        "retainLines": true
+      }
+    }
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.9.6",
+    "@babel/node": "^7.8.7",
+    "@babel/polyfill": "^7.8.7",
+    "@babel/preset-env": "^7.9.6",
+    "babel-eslint": "^10.1.0"
   }
 }

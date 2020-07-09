@@ -2,7 +2,7 @@
 
 # <img src="src/icon.svg" height="48"> Google Cloud DNS
 
-Deploy and manage Cloud DNS records via Azure DevOps Pipeline task.  
+Manage Cloud DNS records via Azure DevOps Pipeline task.  
 *Note: You don't need the Cloud SDK tool before this task.*
 
 ## Extension
