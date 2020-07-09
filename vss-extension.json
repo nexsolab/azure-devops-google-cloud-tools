@@ -119,6 +119,9 @@
     },
     {
       "path": "Tasks/GoogleCloudFunctions"
+    },
+    {
+      "path": "Tasks/GoogleCloudDNS"
     }
   ]
 }
