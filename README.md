@@ -25,6 +25,7 @@ Enable auto install (this will install the extension in your organization when w
 ## Service Connection
 
 You can configure a service connection to use in the tasks.
+[Learn more on how to configure here](SERVICECONN.md)
 
 ![](images/scmenu.png)
 
