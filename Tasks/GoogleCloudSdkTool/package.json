@@ -27,20 +27,23 @@
     "install",
     "sdk"
   ],
-  "author": "Gabriel Anderson",
+  "author": {
+    "name": "Gabriel Anderson",
+    "url": "https://github.com/gcacars"
+  },
   "license": "AGPL-3.0",
   "bugs": {
     "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
   },
   "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools#readme",
   "dependencies": {
-    "@types/mocha": "^7.0.2",
-    "@types/node": "^13.9.0",
-    "@types/q": "^1.5.2",
     "azure-pipelines-task-lib": "^2.9.3",
     "azure-pipelines-tool-lib": "^0.12.0",
-    "sync-request": "^6.1.0",
     "typed-rest-client": "^1.7.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^13.9.0",
+    "@types/q": "^1.5.2"
+  }
 }

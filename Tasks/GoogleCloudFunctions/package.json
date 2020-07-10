@@ -41,7 +41,7 @@
     "googleapis": "^51.0.0",
     "node-fetch": "^2.6.0",
     "return-deep-diff": "^0.4.0",
-    "securefiles-common": "file:securefiles-common.tar"
+    "securefiles-common": "file:../Common/securefiles-common"
   },
   "babel": {
     "presets": [
