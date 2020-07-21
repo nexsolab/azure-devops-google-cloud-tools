@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-import fs from 'fs';
 import * as taskLib from 'azure-pipelines-task-lib/task';
 // eslint-disable-next-line no-unused-vars
 import { GoogleAuth, OAuth2Client } from 'google-auth-library';
@@ -75,6 +74,7 @@ async function getAuthenticatedClient(scopes = []) {
         const secureFileId = taskLib.getInput('jsonCredentials', true);
         const secureFileHelpers = new SecureFileHelpers(2);
         secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
+        taskLib.debug(`Secure file path is ${JSON.stringify(secureFilePath)}`);
       }
 
       if (!taskLib.exist(secureFilePath)) {
@@ -92,7 +92,7 @@ async function getAuthenticatedClient(scopes = []) {
         ],
       });
 
-      projectId = auth.getFileProjectId();
+      projectId = await auth.getFileProjectId();
       taskLib.debug(`Authenticated with JSON file for project "${projectId}"`);
     }
 
@@ -101,7 +101,8 @@ async function getAuthenticatedClient(scopes = []) {
     return { client, projectId };
   } catch (error) {
     taskLib.error(`Failed to authenticate in Google Cloud: ${error.message}`);
-    taskLib.debug(error);
+    taskLib.debug(error.stack);
+    taskLib.debug(JSON.stringify(error));
     taskLib.setResult(taskLib.TaskResult.Failed);
     return null;
   }
