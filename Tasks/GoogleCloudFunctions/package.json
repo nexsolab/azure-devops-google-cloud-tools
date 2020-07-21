@@ -4,8 +4,9 @@
   "description": "Deploy code to GCP Functions or create, remove and call functions",
   "main": "function.js",
   "scripts": {
-    "test": "mocha -r esm -r dotenv/config ./src/main.test.js",
-    "build": "npx babel src --out-dir dist --source-maps --copy-files --ignore node_modules/**/*"
+    "test": "mocha ./src/main.test.js",
+    "testlocal": "mocha -r esm -r dotenv/config ./src/main.test.js",
+    "build": "npx babel src --out-dir dist --copy-files --ignore node_modules/**/*"
   },
   "repository": {
     "type": "git",

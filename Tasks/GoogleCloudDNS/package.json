@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha ./src/main.test.js",
     "testlocal": "mocha -r esm -r dotenv/config ./src/main.test.js",
-    "build": "npx babel src --out-dir dist --source-maps --copy-files --no-copy-ignored --ignore node_modules/**/*.js"
+    "build": "npx babel src --out-dir dist --copy-files --no-copy-ignored --ignore node_modules/**/*"
   },
   "repository": {
     "type": "git",
