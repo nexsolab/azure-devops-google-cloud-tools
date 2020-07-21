@@ -24,10 +24,13 @@ const isInTest = process.argv.join().includes('azure-pipelines-task-lib');
 async function getAuthenticatedClient(scopes = []) {
   try {
     // Get authentication method
+    let auth;
+    let projectId;
     let jsonCredential = '';
     const authMethod = taskLib.getInput('authenticationMethod', true);
 
     if (authMethod === 'serviceAccount' && !isInTest) {
+      // Service Connection
       const account = taskLib.getInput('SCserviceAccount', true);
       const schema = taskLib.getEndpointAuthorizationScheme(account);
       taskLib.debug(`Authorization schema is ${schema}`);
@@ -40,10 +43,29 @@ async function getAuthenticatedClient(scopes = []) {
         taskLib.debug('Recovered JSON file contents');
       }
 
-      console.log(`jsonCredential é: ${jsonCredential}`);
-
       taskLib.debug(`Using Service Connection authentication [${schema}]`);
+
+      // Fix line breaks in private key before parse JSON
+      const privateKeyIni = jsonCredential.indexOf('-----BEGIN PRIVATE KEY-----');
+      const privateKeyEnd = jsonCredential.indexOf('",', privateKeyIni);
+      const escapedKey = jsonCredential.substring(privateKeyIni, privateKeyEnd).replace(/\n/g, '\\n');
+      const jsonStart = jsonCredential.substring(0, privateKeyIni);
+      const jsonEscaped = jsonStart + escapedKey + jsonCredential.substr(privateKeyEnd);
+      const credentials = JSON.parse(jsonEscaped);
+
+      auth = new GoogleAuth({
+        credentials,
+        // Scopes can be specified either as an array or as a single, space-delimited string.
+        scopes: [
+          'https://www.googleapis.com/auth/cloud-platform',
+          ...scopes,
+        ],
+      });
+
+      projectId = credentials.project_id;
+      taskLib.debug(`Authenticated as ${credentials.client_email} for project "${projectId}"`);
     } else if (authMethod === 'jsonFile' || isInTest) {
+      // Secure file
       let secureFilePath = '';
 
       if (isInTest) {
@@ -55,43 +77,27 @@ async function getAuthenticatedClient(scopes = []) {
         secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
       }
 
-      if (taskLib.exist(secureFilePath)) {
-        jsonCredential = fs.readFileSync(secureFilePath, { encoding: 'utf8' });
-      } else {
+      if (!taskLib.exist(secureFilePath)) {
         taskLib.error(`Secure file not founded at ${secureFilePath}`);
         taskLib.setResult(taskLib.TaskResult.Failed);
         return null;
       }
+
+      auth = new GoogleAuth({
+        keyFile: secureFilePath,
+        // Scopes can be specified either as an array or as a single, space-delimited string.
+        scopes: [
+          'https://www.googleapis.com/auth/cloud-platform',
+          ...scopes,
+        ],
+      });
+
+      projectId = auth.getFileProjectId();
+      taskLib.debug(`Authenticated with JSON file for project "${projectId}"`);
     }
-
-    // Fix line breaks in private key before parse JSON
-    const privateKeyIni = jsonCredential.indexOf('-----BEGIN PRIVATE KEY-----');
-    const privateKeyEnd = jsonCredential.indexOf('",', privateKeyIni);
-    const escapedKey = jsonCredential.substring(privateKeyIni, privateKeyEnd).replace(/\n/g, '\\n');
-    const jsonStart = jsonCredential.substring(0, privateKeyIni);
-    const jsonEscaped = jsonStart + escapedKey + jsonCredential.substr(privateKeyEnd);
-    const credentials = JSON.parse(jsonEscaped);
-
-    const auth = new GoogleAuth({
-      credentials,
-      // Scopes can be specified either as an array or as a single, space-delimited string.
-      scopes: [
-        'https://www.googleapis.com/auth/cloud-platform',
-        ...scopes,
-      ],
-    });
 
     // Acquire an auth client, and bind it to all future calls
     const client = await auth.getClient();
-    const projectId = credentials.project_id;
-
-    // Get info about credential
-    if (jsonCredential && credentials) {
-      taskLib.debug(`Authenticated as ${credentials.client_email} for project "${projectId}"`);
-    } else {
-      taskLib.debug('Authenticated (JSON could not be read.');
-    }
-
     return { client, projectId };
   } catch (error) {
     taskLib.error(`Failed to authenticate in Google Cloud: ${error.message}`);
