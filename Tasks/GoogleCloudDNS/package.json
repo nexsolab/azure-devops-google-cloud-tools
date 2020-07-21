@@ -4,7 +4,8 @@
   "description": "Manage Google Cloud DNS regions and records",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha ./src/main.test.js",
+    "testlocal": "mocha -r esm -r dotenv/config ./src/main.test.js",
     "build": "npx babel src --out-dir dist --source-maps --copy-files --no-copy-ignored --ignore node_modules/**/*.js"
   },
   "repository": {
@@ -38,7 +39,6 @@
   },
   "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS#readme",
   "dependencies": {
-    "@google-cloud/dns": "^2.0.2",
     "azure-pipelines-task-lib": "^2.9.3",
     "google-auth-library": "^6.0.4",
     "securefiles-common": "file:../Common/securefiles-common"

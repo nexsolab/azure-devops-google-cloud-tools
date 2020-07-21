@@ -13,7 +13,7 @@
   "instanceNameFormat": "Cloud DNS - $(operation) $(recordName)",
   "version": {
     "Major": 0,
-    "Minor": 6,
+    "Minor": 1,
     "Patch": 0
   },
   "groups": [],
@@ -59,17 +59,6 @@
       }
     },
     {
-      "name": "gcpProject",
-      "type": "pickList",
-      "label": "Project",
-      "defaultValue": "",
-      "required": true,
-      "properties": {
-        "EditableOptions": "True"
-      },
-      "helpMarkDown": "Enter or select the Project where this function should be created."
-    },
-    {
       "name": "recordZone",
       "type": "string",
       "label": "Zone",
@@ -101,7 +90,7 @@
         "EditableOptions": "True"
       },
       "helpMarkDown": "The template of the value for the record set to be exported as an environment variable. [Cloud DNS Docs](https://cloud.google.com/dns/docs/reference/v1/resourceRecordSets/list)",
-      "visibleRule": "operation = add"
+      "visibleRule": "operation = value"
     },
     {
       "name": "recordType",
@@ -128,7 +117,7 @@
       "defaultValue": "",
       "required": true,
       "helpMarkDown": "The record value. i.e. If type A: '1.2.3.4', type CNAME: 'other.site.com'...",
-      "visibleRule": "funcTrigger = topic"
+      "visibleRule": "operation = add"
     },
     {
       "name": "recordTtl",

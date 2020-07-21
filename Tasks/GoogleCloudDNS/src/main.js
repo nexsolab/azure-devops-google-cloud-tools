@@ -1,115 +1,33 @@
 /* eslint-disable no-console */
 import fs from 'fs';
 import * as taskLib from 'azure-pipelines-task-lib/task';
-import { DNS } from '@google-cloud/dns';
+// eslint-disable-next-line no-unused-vars
+import { GoogleAuth, OAuth2Client } from 'google-auth-library';
+import secureFilesCommon from 'securefiles-common';
+
+const apiUrl = 'https://dns.googleapis.com/dns/v1';
+const isInTest = process.argv.join().includes('azure-pipelines-task-lib');
+
+// #region Utils
+/**
+ * @typedef {object} AuthClientResult
+ * @property {OAuth2Client} client Google API authenticated client
+ * @property {string} projectId The current Google Cloud Project ID
+ */
 
 /**
- * Check a result of a Rest call and fail task when response is not successful.
+ * Authenticate using credentials and return a client.
  *
- * @param {*} res The Rest API response
- * @returns {*} The metadata of the operation.
+ * @param {string[]} [scopes=[]] Needed Google API scopes
+ * @returns {AuthClientResult}
  */
-function checkResultAndGetMetadata(res) {
-  taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res));
-
-  if (res.status >= 400 || !res.data) {
-    if (res.data.error) {
-      taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
-      taskLib.debug(res.data.error.details.join('\n'));
-    }
-    taskLib.setResult(taskLib.TaskResult.Failed);
-  }
-
-  return res.data && res.data.metadata;
-}
-
-/**
- * Add or delete a DNS record set.
- *
- * @author Gabriel Anderson
- * @param {('add'|'delete')} operation Should add or delete a record?
- * @param {DNS} dns Google DNS client
- * @param {string} project The GCP project where managed zone is
- * @param {string} managedZone The managed zone of the record
- * @param {string} name The name (address) of the record (for example www.example.com.)
- * @param {string} type The identifier of a supported record type.
- * @param {number} ttl Number of seconds that this ResourceRecordSet can be cached by resolvers.
- * @param {string} value The value of the record (like IP address if it is a record of type A)
- * @returns {*} The change result.
- */
-async function changeRecord(operation, dns, project, managedZone, name, type, ttl, value) {
-  console.log(`Adding record ${name} to ${managedZone} - ${project}`);
-
-  const change = dns.zone(managedZone).change().create({
-    [operation]: [
-      {
-        type,
-        rrdatas: [value],
-        metadata: {
-          name,
-          type,
-          ttl,
-          data: value,
-        },
-      },
-    ],
-  });
-
-  const res = change[1];
-
-  // Already exists, just show a warning
-  if (res.status === 409) {
-    console.warn(`The record ${name} - ${type}: ${value} already exists.`);
-    return {
-      name,
-    };
-  }
-
-  return checkResultAndGetMetadata(res);
-}
-
-/**
- * Get the JSON value from a record.
- *
- * @author Gabriel Anderson
- * @param {DNS} dns Google DNS client
- * @param {string} project The GCP project where managed zone is
- * @param {string} managedZone The managed zone of the record
- * @param {string} name The name (address) of the record (for example www.example.com.)
- * @returns {import('googleapis').dns_v1.Schema$ResourceRecordSetsListResponse} The record set data.
- */
-async function getRecord(credentials, project, managedZone, name) {
-  // check if name ends in dot
-  const fixedName = (name.substr(-1) === '.') ? name : `${name}.`;
-  console.log(`Get value for ${fixedName} in ${managedZone} - ${project}`);
-  
-  query
-
-  const res = await dns.resourceRecordSets.list({
-    auth,
-    project,
-    managedZone,
-    name: fixedName,
-  });
-
-  return checkResultAndGetMetadata(res);
-}
-
-/**
- * Main function
- *
- */
-async function main() {
-  let taskSuccess = false;
-
+async function getAuthenticatedClient(scopes = []) {
   try {
-    // #region auth
     // Get authentication method
     let jsonCredential = '';
     const authMethod = taskLib.getInput('authenticationMethod', true);
 
-    if (authMethod === 'serviceAccount') {
+    if (authMethod === 'serviceAccount' && !isInTest) {
       const account = taskLib.getInput('SCserviceAccount', true);
       const schema = taskLib.getEndpointAuthorizationScheme(account);
       taskLib.debug(`Authorization schema is ${schema}`);
@@ -122,18 +40,27 @@ async function main() {
         taskLib.debug('Recovered JSON file contents');
       }
 
-      taskLib.debug('Using Service Connection authentication');
-    } else if (authMethod === 'jsonFile') {
-      const secureFileId = taskLib.getInput('jsonCredentials', true);
-      const secureFileHelpers = new secureFilesCommon.SecureFileHelpers();
-      const secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
+      console.log(`jsonCredential é: ${jsonCredential}`);
+
+      taskLib.debug(`Using Service Connection authentication [${schema}]`);
+    } else if (authMethod === 'jsonFile' || isInTest) {
+      let secureFilePath = '';
+
+      if (isInTest) {
+        console.log('Testing! Using local "credentials.json" file');
+        secureFilePath = 'credentials.json';
+      } else {
+        const secureFileId = taskLib.getInput('jsonCredentials', true);
+        const secureFileHelpers = new secureFilesCommon.SecureFileHelpers();
+        secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
+      }
 
       if (taskLib.exist(secureFilePath)) {
         jsonCredential = fs.readFileSync(secureFilePath, { encoding: 'utf8' });
       } else {
         taskLib.error(`Secure file not founded at ${secureFilePath}`);
         taskLib.setResult(taskLib.TaskResult.Failed);
-        return;
+        return null;
       }
     }
 
@@ -145,27 +72,173 @@ async function main() {
     const jsonEscaped = jsonStart + escapedKey + jsonCredential.substr(privateKeyEnd);
     const credentials = JSON.parse(jsonEscaped);
 
+    const auth = new GoogleAuth({
+      credentials,
+      // Scopes can be specified either as an array or as a single, space-delimited string.
+      scopes: [
+        'https://www.googleapis.com/auth/cloud-platform',
+        ...scopes,
+      ],
+    });
+
+    // Acquire an auth client, and bind it to all future calls
+    const client = await auth.getClient();
+    const projectId = credentials.project_id;
+
     // Get info about credential
     if (jsonCredential && credentials) {
-      taskLib.debug(`Authenticated as ${credentials.client_email}`);
+      taskLib.debug(`Authenticated as ${credentials.client_email} for project "${projectId}"`);
     } else {
       taskLib.debug('Authenticated (JSON could not be read.');
     }
-    // #endregion auth
+
+    return { client, projectId };
+  } catch (error) {
+    taskLib.error(`Failed to authenticate in Google Cloud: ${error.message}`);
+    taskLib.debug(error);
+    taskLib.setResult(taskLib.TaskResult.Failed);
+    return null;
+  }
+}
+
+/**
+ * Check a result of a Rest call and fail task when response is not successful.
+ *
+ * @param {*} res The Rest API response
+ * @returns {*} The metadata of the operation.
+ */
+function checkResultAndGetData(res) {
+  taskLib.debug('Result from operation:');
+  taskLib.debug(JSON.stringify(res));
+
+  if (res.status >= 400 || !res.data) {
+    if (res.data.error) {
+      taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
+      taskLib.debug(res.data.error.details.join('\n'));
+    }
+    taskLib.setResult(taskLib.TaskResult.Failed);
+  }
+
+  return res.data;
+}
+// #endregion Utils
+
+// #region Operations
+/**
+ * Add or delete a DNS record set.
+ *
+ * @author Gabriel Anderson
+ * @param {('add'|'delete')} operation Should add or delete a record?
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP project where managed zone is
+ * @param {string} managedZone The managed zone of the record
+ * @param {string} name The name (address) of the record (for example www.example.com.)
+ * @param {string} type The identifier of a supported record type.
+ * @param {number} ttl Number of seconds that this ResourceRecordSet can be cached by resolvers.
+ * @param {string} value The value of the record (like IP address if it is a record of type A)
+ * @returns {*} The change result.
+ */
+async function changeRecord(operation, client, project, managedZone, name, type, ttl, value) {
+  const fixedName = (name.substr(-1) === '.') ? name : `${name}.`;
+  const url = `projects/${project}/managedZones/${managedZone}/changes`;
+  console.log(`Adding record ${fixedName} to ${url}`);
+
+  const ops = operation === 'delete' ? 'deletions' : 'additions';
+  const requestBody = {
+    kind: 'dns#change',
+    [ops]: [
+      {
+        kind: 'dns#resourceRecordSet',
+        name: fixedName,
+        type,
+        ttl,
+        rrdatas: [value],
+      },
+    ],
+  };
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'POST',
+      url: `${apiUrl}/${url}`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  } catch (error) {
+    const result = error.response.data;
+
+    // Already exists, just show a warning
+    if (result.error && result.error.code === 409 && operation === 'add') {
+      console.log(`[!] The record ${type} ${name} already exists.`);
+      return {
+        data: requestBody,
+        id: 1,
+      };
+    }
+
+    console.error(JSON.stringify(result));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+
+/**
+ * Get the JSON value from a record.
+ *
+ * @author Gabriel Anderson
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP project where managed zone is
+ * @param {string} managedZone The managed zone of the record
+ * @param {string} name The name (address) of the record (for example www.example.com.)
+ * @returns {*} The record set data.
+ */
+async function getRecord(client, project, managedZone, name) {
+  const url = `projects/${project}/managedZones/${managedZone}/rrsets`;
+  // check if name ends in dot
+  const fixedName = (name.substr(-1) === '.') ? name : `${name}.`;
+  console.log(`Get value for ${fixedName} in ${url}`);
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'GET',
+      url: `${apiUrl}/${url}?name=${fixedName}`,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+
+/**
+ * Main function
+ *
+ */
+async function main() {
+  let taskSuccess = false;
+
+  try {
+    // Get authentication
+    const auth = await getAuthenticatedClient([
+      'https://www.googleapis.com/auth/ndev.clouddns.readwrite',
+    ]);
 
     // Check operation
     const op = taskLib.getInput('operation', false);
 
     // Get some basic info
-    const projectId = taskLib.getInput('gcpProject', true);
     const zone = taskLib.getInput('recordZone', true);
     const name = taskLib.getInput('recordName', true);
-
-    // Create DNS class
-    const dns = new DNS({
-      projectId,
-      credentials,
-    });
 
     switch (op) {
       case 'add': {
@@ -174,19 +247,24 @@ async function main() {
         const ttl = parseInt(taskLib.getInput('recordTtl', true));
         const value = taskLib.getInput('recordValue', true);
 
-        const result = await changeRecord('add', dns, projectId, zone, name, type, ttl, value);
-        taskSuccess = result && result.name;
+        const result = await changeRecord('add', auth.client, auth.projectId, zone, name, type, ttl, value);
+        taskSuccess = result && result.id;
         break;
       }
 
       case 'delete': {
-        const result = await changeRecord('delete', dns, projectId, zone, name);
-        taskSuccess = result && result.name;
+        const type = taskLib.getInput('recordType', true);
+        // eslint-disable-next-line radix
+        const ttl = parseInt(taskLib.getInput('recordTtl', true));
+        const value = taskLib.getInput('recordValue', true);
+
+        const result = await changeRecord('delete', auth.client, auth.projectId, zone, name, type, ttl, value);
+        taskSuccess = result && result.id;
         break;
       }
 
       case 'value': {
-        const result = await getRecord(dns, projectId, zone, name);
+        const result = await getRecord(auth.client, auth.projectId, zone, name);
         taskSuccess = result.rrsets.length > 0;
 
         if (taskSuccess) {
