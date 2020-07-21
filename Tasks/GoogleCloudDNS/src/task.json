@@ -3,7 +3,7 @@
   "id": "7cef15d7-c384-4630-bb5c-b2c27ac02a9e",
   "name": "GoogleCloudDNS",
   "friendlyName": "Google Cloud DNS Records",
-  "description": "Create or manage DNS records in Google Cloud",
+  "description": "Create and manage DNS records in Google Cloud",
   "helpUrl": "https://github.com/nexsolab/azure-devops-google-cloud-tools",
   "helpMarkDown": "[Learn more about this task](https://github.com/nexsolab/azure-devops-google-cloud-tools#readme) or [see the Functions documentation](https://cloud.google.com/sdk/gcloud/reference/dns/record-sets)",
   "category": "Deploy",
