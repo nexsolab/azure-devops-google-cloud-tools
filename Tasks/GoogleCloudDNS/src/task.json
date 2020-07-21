@@ -53,8 +53,8 @@
       "required": true,
       "defaultValue": "deploy",
       "options": {
-        "create": "Add",
-        "delete": "Remove",
+        "add": "Add",
+        "delete": "Delete",
         "value": "Get record value"
       }
     },

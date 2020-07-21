@@ -1,0 +1,23 @@
+{
+  "name": "nodejs-docs-samples-functions-hello-world",
+  "version": "0.0.1",
+  "private": true,
+  "license": "Apache-2.0",
+  "author": "Google Inc.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GoogleCloudPlatform/nodejs-docs-samples.git"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "scripts": {
+    "unit-test": "mocha test/index.test.js test/*unit*test.js test/*integration*test.js --timeout=2000 --exit",
+    "system-test": "mocha test/*system*test.js --timeout=600000 --exit",
+    "test": "npm run unit-test"
+  },
+  "dependencies": {
+    "@google-cloud/debug-agent": "^5.0.0"
+  },
+  "devDependencies": {}
+}
