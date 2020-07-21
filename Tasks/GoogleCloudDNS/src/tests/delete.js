@@ -7,8 +7,8 @@ const taskPath = path.join(__dirname, '..', 'main.js');
 const tmr = new tmrm.TaskMockRunner(taskPath);
 
 const region = 'us-east1';
-const zone = 'nexso-public';
-const name = 'dnsunittest.nexso.com.br';
+const zone = 'example-public';
+const name = 'dnsunittest.example.com';
 
 tmr.setAnswers({
   exist: {

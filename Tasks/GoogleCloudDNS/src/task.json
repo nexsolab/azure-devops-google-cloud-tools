@@ -2,10 +2,10 @@
   "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
   "id": "7cef15d7-c384-4630-bb5c-b2c27ac02a9e",
   "name": "GoogleCloudDNS",
-  "friendlyName": "Google Cloud DNS Records",
+  "friendlyName": "Google Cloud DNS zone manager",
   "description": "Create and manage DNS records in Google Cloud",
   "helpUrl": "https://github.com/nexsolab/azure-devops-google-cloud-tools",
-  "helpMarkDown": "[Learn more about this task](https://github.com/nexsolab/azure-devops-google-cloud-tools#readme) or [see the Functions documentation](https://cloud.google.com/sdk/gcloud/reference/dns/record-sets)",
+  "helpMarkDown": "[Learn more about this task](https://github.com/nexsolab/azure-devops-google-cloud-tools#readme) or [see the Cloud DNS documentation](https://cloud.google.com/sdk/gcloud/reference/dns/record-sets)",
   "category": "Deploy",
   "runsOn": ["Agent"],
   "visibility": ["Build", "Release"],
@@ -26,7 +26,7 @@
         "serviceAccount": "Service Account (Connected Service)",
         "jsonFile": "JSON file credentials"
       },
-      "helpMarkDown": "Authorization requires the following Google IAM permission on the specified resources:<br />`cloudfunctions.functions.call`<br />`cloudfunctions.functions.create`<br />`cloudfunctions.functions.delete`<br />`cloudfunctions.functions.get`<br />`cloudfunctions.functions.sourceCodeSet`"
+      "helpMarkDown": "Authorization requires the following Google IAM roles:<br />`roles/dns.admin`"
     },
     {
       "name": "SCserviceAccount",
@@ -51,7 +51,7 @@
       "type": "pickList",
       "label": "Operation",
       "required": true,
-      "defaultValue": "deploy",
+      "defaultValue": "add",
       "options": {
         "add": "Add",
         "delete": "Delete",
@@ -61,7 +61,7 @@
     {
       "name": "recordZone",
       "type": "string",
-      "label": "Zone",
+      "label": "Managed Zone",
       "defaultValue": "",
       "required": true,
       "helpMarkDown": "Name of the managed-zone whose record-sets you want to manage.",
@@ -82,7 +82,7 @@
       "defaultValue": "typeval",
       "required": true,
       "options": {
-        "typeval": "Type|Value (i.e. A|192.168.0.1,192.168.0.2",
+        "typeval": "Type|Value (i.e. A|192.168.0.1,192.168.0.2)",
         "firstval": "First value (i.e. 192.168.0.1)",
         "json": "Full JSON (i.e {\"name\": \"example.com\", \"type\": \"A\"...)"
       },

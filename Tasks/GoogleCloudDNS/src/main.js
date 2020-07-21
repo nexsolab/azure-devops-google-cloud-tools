@@ -3,7 +3,7 @@ import fs from 'fs';
 import * as taskLib from 'azure-pipelines-task-lib/task';
 // eslint-disable-next-line no-unused-vars
 import { GoogleAuth, OAuth2Client } from 'google-auth-library';
-import secureFilesCommon from 'securefiles-common';
+import { SecureFileHelpers } from 'securefiles-common';
 
 const apiUrl = 'https://dns.googleapis.com/dns/v1';
 const isInTest = process.argv.join().includes('azure-pipelines-task-lib');
@@ -51,7 +51,7 @@ async function getAuthenticatedClient(scopes = []) {
         secureFilePath = 'credentials.json';
       } else {
         const secureFileId = taskLib.getInput('jsonCredentials', true);
-        const secureFileHelpers = new secureFilesCommon.SecureFileHelpers();
+        const secureFileHelpers = new SecureFileHelpers(2);
         secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
       }
 
