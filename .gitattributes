@@ -1,7 +1,8 @@
+# default behavior
+* text eol=lf
+
 # Denote all files that are truly binary and should not be modified.
 *.png binary
 *.jpg binary
 *.tar binary
-
-# default behavior
-* text eol=lf
+*.zip binary
