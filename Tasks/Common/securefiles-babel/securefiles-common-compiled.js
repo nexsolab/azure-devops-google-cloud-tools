@@ -45,12 +45,10 @@ class SecureFileHelpers {
    */
 
 
-  downloadSecureFile(secureFileId, ticket, project) {
+  downloadSecureFile(secureFileId, tempDownloadPath, ticket, project) {
     var _this = this;
 
     return _asyncToGenerator(function* () {
-      const tempDownloadPath = _this.getSecureFileTempDownloadPath(secureFileId);
-
       const file = _fs.default.createWriteStream(tempDownloadPath);
 
       const agentApi = yield _this.serverConnection.getTaskAgentApi();

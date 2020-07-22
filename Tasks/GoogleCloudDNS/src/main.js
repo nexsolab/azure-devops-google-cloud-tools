@@ -66,6 +66,7 @@ async function getAuthenticatedClient(scopes = []) {
     } else if (authMethod === 'jsonFile' || isInTest) {
       // Secure file
       let filename;
+      let downloadPath = '';
       let secureFilePath = '';
 
       if (isInTest) {
@@ -74,6 +75,7 @@ async function getAuthenticatedClient(scopes = []) {
       } else {
         const secureFileId = taskLib.getInput('jsonCredentials', true);
         filename = taskLib.getSecureFileName(secureFileId);
+        downloadPath = taskLib.resolve(taskLib.getVariable('Agent.TempDirectory'), filename);
         const ticket = taskLib.getSecureFileTicket(secureFileId);
         const project = taskLib.getVariable('SYSTEM.TEAMPROJECT');
         const proxy = taskLib.getHttpProxyConfiguration();
@@ -83,7 +85,7 @@ async function getAuthenticatedClient(scopes = []) {
         try {
           taskLib.debug(`Downloading secure file "${filename}" with credentials...`);
           const secureFileHelpers = new SecureFileHelpers(collectionUri, credential, proxy, 3);
-          secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId, ticket, project);
+          secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId, downloadPath, ticket, project);
         } catch (error) {
           console.log(`Error while downloading credentials: ${error.message}`);
           throw error;
@@ -113,8 +115,7 @@ async function getAuthenticatedClient(scopes = []) {
       // Remove secure file
       try {
         taskLib.debug('Remove downloaded secure file');
-        const path = taskLib.resolve(taskLib.getVariable('Agent.TempDirectory'), filename);
-        if (taskLib.exist(path)) taskLib.rmRF(path);
+        if (taskLib.exist(downloadPath)) taskLib.rmRF(downloadPath);
       } catch (error) {
         console.log(`Erro while deleting secure file: ${error.message}`);
       }

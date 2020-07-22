@@ -26,8 +26,7 @@ class SecureFileHelpers {
    * Download secure file contents to a temporary location for the build
    * @param secureFileId
    */
-  async downloadSecureFile(secureFileId, ticket, project) {
-    const tempDownloadPath = this.getSecureFileTempDownloadPath(secureFileId);
+  async downloadSecureFile(secureFileId, tempDownloadPath, ticket, project) {
     const file = fs.createWriteStream(tempDownloadPath);
     const agentApi = await this.serverConnection.getTaskAgentApi();
 
