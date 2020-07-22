@@ -41,7 +41,7 @@
   "dependencies": {
     "azure-pipelines-task-lib": "^2.9.3",
     "google-auth-library": "^6.0.4",
-    "securefiles-common": "file:../Common/securefiles-common"
+    "securefiles-babel": "file:../Common/securefiles-babel"
   },
   "babel": {
     "presets": [

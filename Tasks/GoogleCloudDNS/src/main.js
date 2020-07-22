@@ -2,7 +2,7 @@
 import * as taskLib from 'azure-pipelines-task-lib/task';
 // eslint-disable-next-line no-unused-vars
 import { GoogleAuth, OAuth2Client } from 'google-auth-library';
-import { SecureFileHelpers } from 'securefiles-common';
+import SecureFileHelpers from 'securefiles-babel';
 
 const apiUrl = 'https://dns.googleapis.com/dns/v1';
 const isInTest = process.argv.join().includes('azure-pipelines-task-lib');
