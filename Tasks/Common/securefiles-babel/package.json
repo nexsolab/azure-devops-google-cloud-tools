@@ -10,8 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "azure-devops-node-api": "^10.1.1",
-    "azure-pipelines-task-lib": "^2.9.6"
+    "azure-devops-node-api": "^10.1.1"
   },
   "babel": {
     "presets": [

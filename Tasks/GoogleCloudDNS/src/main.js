@@ -65,6 +65,7 @@ async function getAuthenticatedClient(scopes = []) {
       taskLib.debug(`Authenticated as ${credentials.client_email} for project "${projectId}"`);
     } else if (authMethod === 'jsonFile' || isInTest) {
       // Secure file
+      let filename;
       let secureFilePath = '';
 
       if (isInTest) {
@@ -72,24 +73,22 @@ async function getAuthenticatedClient(scopes = []) {
         secureFilePath = 'credentials.json';
       } else {
         const secureFileId = taskLib.getInput('jsonCredentials', true);
+        filename = taskLib.getSecureFileName(secureFileId);
+        const ticket = taskLib.getSecureFileTicket(secureFileId);
+        const project = taskLib.getVariable('SYSTEM.TEAMPROJECT');
+        const proxy = taskLib.getHttpProxyConfiguration();
+        const collectionUri = taskLib.getVariable('System.TeamFoundationCollectionUri');
+        const credential = taskLib.getEndpointAuthorizationParameter('SYSTEMVSSCONNECTION', 'ACCESSTOKEN', false);
+
         try {
-          taskLib.debug('filename: ' + taskLib.getSecureFileName(secureFileId));
+          taskLib.debug(`Downloading secure file "${filename}" with credentials...`);
+          const secureFileHelpers = new SecureFileHelpers(collectionUri, credential, proxy, 3);
+          secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId, ticket, project);
         } catch (error) {
-          console.log(JSON.stringify(error));
-        }
-        try {
-          taskLib.debug('ticket: ' + taskLib.getSecureFileTicket(secureFileId));
-        } catch (error) {
-          console.log(JSON.stringify(error));
-        }
-        try {
-          taskLib.debug('conn: ' + taskLib.getEndpointAuthorizationParameter('SYSTEMVSSCONNECTION', 'ACCESSTOKEN', false));
-        } catch (error) {
-          console.log(JSON.stringify(error));
+          console.log(`Error while downloading credentials: ${error.message}`);
+          throw error;
         }
 
-        const secureFileHelpers = new SecureFileHelpers(2);
-        secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
         taskLib.debug(`Secure file path is ${JSON.stringify(secureFilePath)}`);
       }
 
@@ -110,6 +109,15 @@ async function getAuthenticatedClient(scopes = []) {
 
       projectId = await auth.getFileProjectId();
       taskLib.debug(`Authenticated with JSON file for project "${projectId}"`);
+
+      // Remove secure file
+      try {
+        taskLib.debug('Remove downloaded secure file');
+        const path = taskLib.resolve(taskLib.getVariable('Agent.TempDirectory'), filename);
+        if (taskLib.exist(path)) taskLib.rmRF(path);
+      } catch (error) {
+        console.log(`Erro while deleting secure file: ${error.message}`);
+      }
     }
 
     // Acquire an auth client, and bind it to all future calls
