@@ -136,15 +136,19 @@ async function getAuthenticatedClient(scopes = []) {
 /**
  * Check a result of a Rest call and fail task when response is not successful.
  *
- * @param {*} res The Rest API response
+ * @param {import('gaxios').GaxiosResponse} res The Rest API response
  * @returns {*} The metadata of the operation.
  */
 function checkResultAndGetData(res) {
   taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res));
+  taskLib.debug(JSON.stringify({
+    status: res.status,
+    statusText: res.statusText,
+    data: res.data,
+  }));
 
   if (res.status >= 400 || !res.data) {
-    if (res.data.error) {
+    if (res.data && res.data.error) {
       taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
       taskLib.debug(res.data.error.details.join('\n'));
     }

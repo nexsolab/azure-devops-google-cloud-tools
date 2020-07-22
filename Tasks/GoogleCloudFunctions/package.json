@@ -42,7 +42,7 @@
     "google-auth-library": "^6.0.5",
     "node-fetch": "^2.6.0",
     "return-deep-diff": "^0.4.0",
-    "securefiles-common": "file:../Common/securefiles-common"
+    "securefiles-babel": "file:../Common/securefiles-babel"
   },
   "babel": {
     "presets": [
