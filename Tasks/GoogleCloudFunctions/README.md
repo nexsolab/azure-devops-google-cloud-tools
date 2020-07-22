@@ -1,4 +1,4 @@
-![Build status](https://dev.azure.com/nexsobr/Nexso%20Agile%20Team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.TaskFunctions) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=azure-devops-google-cloud-tools&metric=alert_status)](https://sonarcloud.io/dashboard?id=azure-devops-google-cloud-tools)
+![Build status](https://dev.azure.com/nexsobr/nx-team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.TaskFunctions) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=azure-devops-google-cloud-tools-task-functions&metric=alert_status)](https://sonarcloud.io/dashboard?id=azure-devops-google-cloud-tools-task-functions)
 
 # <img src="src/icon.svg" height="48"> Google Cloud Functions
 

@@ -1,11 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
-  "id": "XXXXXXX",
+  "id": "7cef15d7-c384-4630-bb5c-b2c27ac02a9e",
   "name": "GoogleCloudDNS",
-  "friendlyName": "Google Cloud DNS Records",
-  "description": "Create or manage DNS records in Google Cloud",
+  "friendlyName": "Google Cloud DNS zone manager",
+  "description": "Create and manage DNS records in Google Cloud",
   "helpUrl": "https://github.com/nexsolab/azure-devops-google-cloud-tools",
-  "helpMarkDown": "[Learn more about this task](https://github.com/nexsolab/azure-devops-google-cloud-tools#readme) or [see the Functions documentation](https://cloud.google.com/sdk/gcloud/reference/dns/record-sets)",
+  "helpMarkDown": "[Learn more about this task](https://github.com/nexsolab/azure-devops-google-cloud-tools#readme) or [see the Cloud DNS documentation](https://cloud.google.com/sdk/gcloud/reference/dns/record-sets)",
   "category": "Deploy",
   "runsOn": ["Agent"],
   "visibility": ["Build", "Release"],
@@ -13,7 +13,7 @@
   "instanceNameFormat": "Cloud DNS - $(operation) $(recordName)",
   "version": {
     "Major": 0,
-    "Minor": 6,
+    "Minor": 1,
     "Patch": 0
   },
   "groups": [],
@@ -26,7 +26,7 @@
         "serviceAccount": "Service Account (Connected Service)",
         "jsonFile": "JSON file credentials"
       },
-      "helpMarkDown": "Authorization requires the following Google IAM permission on the specified resources:<br />`cloudfunctions.functions.call`<br />`cloudfunctions.functions.create`<br />`cloudfunctions.functions.delete`<br />`cloudfunctions.functions.get`<br />`cloudfunctions.functions.sourceCodeSet`"
+      "helpMarkDown": "Authorization requires the following Google IAM roles:<br />`roles/dns.admin`"
     },
     {
       "name": "SCserviceAccount",
@@ -51,32 +51,20 @@
       "type": "pickList",
       "label": "Operation",
       "required": true,
-      "defaultValue": "deploy",
+      "defaultValue": "add",
       "options": {
-        "create": "Add",
-        "delete": "Remove",
+        "add": "Add",
+        "delete": "Delete",
         "value": "Get record value"
       }
     },
     {
-      "name": "gcpProject",
-      "type": "pickList",
-      "label": "Project",
-      "defaultValue": "",
-      "required": true,
-      "properties": {
-        "EditableOptions": "True"
-      },
-      "helpMarkDown": "Enter or select the Project where this function should be created."
-    },
-    {
       "name": "recordZone",
       "type": "string",
-      "label": "Zone",
+      "label": "Managed Zone",
       "defaultValue": "",
       "required": true,
-      "helpMarkDown": "Name of the managed-zone whose record-sets you want to manage.",
-      "visibleRule": "operation = add"
+      "helpMarkDown": "Name of the managed-zone whose record-sets you want to manage."
     },
     {
       "name": "recordName",
@@ -85,6 +73,23 @@
       "defaultValue": "",
       "required": true,
       "helpMarkDown": "DNS or domain name of the record-set to add."
+    },
+    {
+      "name": "outputTemplate",
+      "type": "pickList",
+      "label": "Output template",
+      "defaultValue": "typeval",
+      "required": true,
+      "options": {
+        "typeval": "Type|Value (i.e. A|192.168.0.1,192.168.0.2)",
+        "firstval": "First value (i.e. 192.168.0.1)",
+        "json": "Full JSON (i.e {\"name\": \"example.com\", \"type\": \"A\"...)"
+      },
+      "properties": {
+        "EditableOptions": "True"
+      },
+      "helpMarkDown": "The template of the value for the record set to be exported as an environment variable. [Cloud DNS Docs](https://cloud.google.com/dns/docs/reference/v1/resourceRecordSets/list)",
+      "visibleRule": "operation = value"
     },
     {
       "name": "recordType",
@@ -111,7 +116,7 @@
       "defaultValue": "",
       "required": true,
       "helpMarkDown": "The record value. i.e. If type A: '1.2.3.4', type CNAME: 'other.site.com'...",
-      "visibleRule": "funcTrigger = topic"
+      "visibleRule": "operation = add"
     },
     {
       "name": "recordTtl",
