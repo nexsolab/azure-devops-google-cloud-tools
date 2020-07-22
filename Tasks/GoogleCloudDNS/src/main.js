@@ -72,6 +72,22 @@ async function getAuthenticatedClient(scopes = []) {
         secureFilePath = 'credentials.json';
       } else {
         const secureFileId = taskLib.getInput('jsonCredentials', true);
+        try {
+          taskLib.debug('filename: ' + taskLib.getSecureFileName(secureFileId));
+        } catch (error) {
+          console.log(JSON.stringify(error));
+        }
+        try {
+          taskLib.debug('ticket: ' + taskLib.getSecureFileTicket(secureFileId));
+        } catch (error) {
+          console.log(JSON.stringify(error));
+        }
+        try {
+          taskLib.debug('conn: ' + taskLib.getEndpointAuthorizationParameter('SYSTEMVSSCONNECTION', 'ACCESSTOKEN', false));
+        } catch (error) {
+          console.log(JSON.stringify(error));
+        }
+
         const secureFileHelpers = new SecureFileHelpers(2);
         secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
         taskLib.debug(`Secure file path is ${JSON.stringify(secureFilePath)}`);
