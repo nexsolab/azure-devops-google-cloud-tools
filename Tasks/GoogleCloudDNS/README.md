@@ -38,12 +38,12 @@ Or you can use the role:
 
 ### Add
 
-![](screenshots/deploy.png)
-
-### Delete
-
-![](screenshots/call.png)
+![](screenshots/dns-add.jpg)
 
 ### Get the record value
 
-![](screenshots/delete.png)
+![](screenshots/dns-value.jpg)
+
+### Delete
+
+![](screenshots/dns-delete.jpg)

@@ -14,7 +14,7 @@ Deploy code to Cloud Functions or manage them: Create/Update, Delete or Call fun
 Add, remove or get the value of the record sets for managed zones.
 - **Deploy and manage App Service** (soon)
 - **Manage Service Endpoints** (soon)
-- **Manage PubSub Topics** (soon)
+- **Manage PubSub Topics** (next)
 - **Manage PubSub Subscriptions** (soon)
 - **Manage Redis instances** (soon)
 
@@ -30,6 +30,13 @@ You can configure a service connection to use in the tasks.
 And put the credentials exported in JSON from a service account from your Google Cloud Project.
 
 ![](images/sc.png)
+
+## Recent updates
+* Cloud Functions:
+  - Fixed connection via secure file
+  - Fixed create operation
+  - Task size optimized
+* Cloud DNS **[new]**
 
 ## Contributing
 
