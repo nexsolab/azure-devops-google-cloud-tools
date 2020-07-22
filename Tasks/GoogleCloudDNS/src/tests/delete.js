@@ -7,8 +7,8 @@ const taskPath = path.join(__dirname, '..', 'main.js');
 const tmr = new tmrm.TaskMockRunner(taskPath);
 
 const region = 'us-east1';
-const zone = 'example-public';
-const name = 'dnsunittest.example.com';
+const zone = 'nexso-public';
+const name = 'teste.nexso.com.br';
 
 tmr.setAnswers({
   exist: {
@@ -23,8 +23,8 @@ tmr.setInput('gcpRegion', region);
 tmr.setInput('recordZone', zone);
 tmr.setInput('recordName', name);
 // tmr.setInput('outputTemplate', 'firstval');
-tmr.setInput('recordType', 'A');
-tmr.setInput('recordValue', '150.250.175.65');
-tmr.setInput('recordTtl', '5');
+// tmr.setInput('recordType', 'A');
+// tmr.setInput('recordValue', '150.250.175.65');
+// tmr.setInput('recordTtl', '5');
 
 tmr.run();

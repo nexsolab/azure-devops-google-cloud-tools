@@ -161,6 +161,39 @@ function checkResultAndGetData(res) {
 
 // #region Operations
 /**
+ * Get the JSON value from a record.
+ *
+ * @author Gabriel Anderson
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP project where managed zone is
+ * @param {string} managedZone The managed zone of the record
+ * @param {string} name The name (address) of the record (for example www.example.com.)
+ * @returns {*} The record set data.
+ */
+async function getRecord(client, project, managedZone, name) {
+  const url = `projects/${project}/managedZones/${managedZone}/rrsets`;
+  // check if name ends in dot
+  const fixedName = (name.substr(-1) === '.') ? name : `${name}.`;
+  console.log(`Get value for ${fixedName} in ${url}`);
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'GET',
+      url: `${apiUrl}/${url}?name=${fixedName}`,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+
+/**
  * Add or delete a DNS record set.
  *
  * @author Gabriel Anderson
@@ -177,7 +210,23 @@ function checkResultAndGetData(res) {
 async function changeRecord(operation, client, project, managedZone, name, type, ttl, value) {
   const fixedName = (name.substr(-1) === '.') ? name : `${name}.`;
   const url = `projects/${project}/managedZones/${managedZone}/changes`;
-  console.log(`Adding record ${fixedName} to ${url}`);
+  console.log(`${operation === 'add' ? 'Adding' : 'Deleting'} record ${fixedName} to ${url}`);
+  let rrdatas = [value];
+
+  // If operation = delete, so get record info before
+  if (operation === 'delete') {
+    const current = await getRecord(client, project, managedZone, fixedName);
+    if (!current || current.rrsets.length === 0) {
+      throw new Error(`${fixedName} in projects/${project}/managedZones/${managedZone} not found and cannot be deleted.`);
+    }
+
+    const record = current.rrsets[0];
+    // eslint-disable-next-line no-param-reassign
+    type = record.type;
+    // eslint-disable-next-line no-param-reassign
+    ttl = record.ttl;
+    rrdatas = record.rrdatas;
+  }
 
   const ops = operation === 'delete' ? 'deletions' : 'additions';
   const requestBody = {
@@ -188,7 +237,7 @@ async function changeRecord(operation, client, project, managedZone, name, type,
         name: fixedName,
         type,
         ttl,
-        rrdatas: [value],
+        rrdatas,
       },
     ],
   };
@@ -224,39 +273,6 @@ async function changeRecord(operation, client, project, managedZone, name, type,
 }
 
 /**
- * Get the JSON value from a record.
- *
- * @author Gabriel Anderson
- * @param {OAuth2Client} client Google Auth Client
- * @param {string} project The GCP project where managed zone is
- * @param {string} managedZone The managed zone of the record
- * @param {string} name The name (address) of the record (for example www.example.com.)
- * @returns {*} The record set data.
- */
-async function getRecord(client, project, managedZone, name) {
-  const url = `projects/${project}/managedZones/${managedZone}/rrsets`;
-  // check if name ends in dot
-  const fixedName = (name.substr(-1) === '.') ? name : `${name}.`;
-  console.log(`Get value for ${fixedName} in ${url}`);
-
-  let res;
-  try {
-    res = await client.request({
-      method: 'GET',
-      url: `${apiUrl}/${url}?name=${fixedName}`,
-      headers: {
-        Accept: 'application/json',
-      },
-    });
-  } catch (error) {
-    console.error(JSON.stringify(error.response.data));
-    throw error;
-  }
-
-  return checkResultAndGetData(res);
-}
-
-/**
  * Main function
  *
  */
@@ -277,24 +293,14 @@ async function main() {
     const name = taskLib.getInput('recordName', true);
 
     switch (op) {
-      case 'add': {
-        const type = taskLib.getInput('recordType', true);
-        // eslint-disable-next-line radix
-        const ttl = parseInt(taskLib.getInput('recordTtl', true));
-        const value = taskLib.getInput('recordValue', true);
-
-        const result = await changeRecord('add', auth.client, auth.projectId, zone, name, type, ttl, value);
-        taskSuccess = result && result.id;
-        break;
-      }
-
+      case 'add':
       case 'delete': {
-        const type = taskLib.getInput('recordType', true);
+        const type = taskLib.getInput('recordType', op === 'add');
         // eslint-disable-next-line radix
-        const ttl = parseInt(taskLib.getInput('recordTtl', true));
-        const value = taskLib.getInput('recordValue', true);
+        const ttl = parseInt(taskLib.getInput('recordTtl', op === 'add'));
+        const value = taskLib.getInput('recordValue', op === 'add');
 
-        const result = await changeRecord('delete', auth.client, auth.projectId, zone, name, type, ttl, value);
+        const result = await changeRecord(op, auth.client, auth.projectId, zone, name, type, ttl, value);
         taskSuccess = result && result.id;
         break;
       }
