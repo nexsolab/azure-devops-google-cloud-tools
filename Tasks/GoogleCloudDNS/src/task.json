@@ -64,8 +64,7 @@
       "label": "Managed Zone",
       "defaultValue": "",
       "required": true,
-      "helpMarkDown": "Name of the managed-zone whose record-sets you want to manage.",
-      "visibleRule": "operation = add"
+      "helpMarkDown": "Name of the managed-zone whose record-sets you want to manage."
     },
     {
       "name": "recordName",
