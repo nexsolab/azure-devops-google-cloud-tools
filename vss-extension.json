@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "azure-devops-google-cloud-tools",
   "publisher": "nexso",
-  "version": "1.0.13",
+  "version": "1.2.0",
   "name": "Google Cloud tools for Azure DevOps Pipelines",
   "scopes": ["vso.build", "vso.build_execute", "vso.release"],
   "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy do App Services",
@@ -79,6 +79,15 @@
       "properties": {
         "name": "Tasks/GoogleCloudFunctions"
       }
+    },
+    {
+      "id": "GoogleCloudDNS",
+      "description": "Create and manage DNS records in Google Cloud",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+        "name": "Tasks/GoogleCloudDNS"
+      }
     }
   ],
   "links": {
@@ -119,6 +128,9 @@
     },
     {
       "path": "Tasks/GoogleCloudFunctions"
+    },
+    {
+      "path": "Tasks/GoogleCloudDNS"
     }
   ]
 }

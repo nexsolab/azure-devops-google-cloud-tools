@@ -2,27 +2,159 @@
 /* eslint-disable radix */
 /* eslint max-len: ["error", { "code": 100, "tabWidth": 2, "ignoreComments": true, "ignoreTemplateLiterals": true }] */
 import * as taskLib from 'azure-pipelines-task-lib/task';
-import { google } from 'googleapis';
+// eslint-disable-next-line no-unused-vars
+import { GoogleAuth, OAuth2Client } from 'google-auth-library';
 import fetch from 'node-fetch';
 import path from 'path';
 import fs from 'fs';
-import secureFilesCommon from 'securefiles-common/securefiles-common';
+import SecureFileHelpers from 'securefiles-babel';
 import deepDiff from 'return-deep-diff';
 
-const cloudFunctions = google.cloudfunctions('v1');
+const apiUrl = 'https://cloudfunctions.googleapis.com/v1';
+const isInTest = process.argv.join().includes('azure-pipelines-task-lib');
+
+// #region Utils
+/**
+ * @typedef {object} AuthClientResult
+ * @property {OAuth2Client} client Google API authenticated client
+ * @property {string} projectId The current Google Cloud Project ID
+ */
+
+/**
+ * Authenticate using credentials and return a client.
+ *
+ * @param {string[]} [scopes=[]] Needed Google API scopes
+ * @returns {AuthClientResult}
+ */
+async function getAuthenticatedClient(scopes = []) {
+  try {
+    // Get authentication method
+    let auth;
+    let projectId;
+    let jsonCredential = '';
+    const authMethod = taskLib.getInput('authenticationMethod', true);
+
+    if (authMethod === 'serviceAccount' && !isInTest) {
+      // Service Connection
+      const account = taskLib.getInput('SCserviceAccount', true);
+      const schema = taskLib.getEndpointAuthorizationScheme(account);
+      taskLib.debug(`Authorization schema is ${schema}`);
+
+      if (schema === 'ms.vss-endpoint.endpoint-auth-scheme-oauth2') {
+        const authSc = taskLib.getEndpointAuthorization(account);
+        taskLib.debug(JSON.stringify(authSc));
+      } else {
+        jsonCredential = taskLib.getEndpointAuthorizationParameter(account, 'certificate', false);
+        taskLib.debug('Recovered JSON file contents');
+      }
+
+      taskLib.debug(`Using Service Connection authentication [${schema}]`);
+
+      // Fix line breaks in private key before parse JSON
+      const privateKeyIni = jsonCredential.indexOf('-----BEGIN PRIVATE KEY-----');
+      const privateKeyEnd = jsonCredential.indexOf('",', privateKeyIni);
+      const escapedKey = jsonCredential.substring(privateKeyIni, privateKeyEnd).replace(/\n/g, '\\n');
+      const jsonStart = jsonCredential.substring(0, privateKeyIni);
+      const jsonEscaped = jsonStart + escapedKey + jsonCredential.substr(privateKeyEnd);
+      const credentials = JSON.parse(jsonEscaped);
+
+      auth = new GoogleAuth({
+        credentials,
+        // Scopes can be specified either as an array or as a single, space-delimited string.
+        scopes: [
+          'https://www.googleapis.com/auth/cloud-platform',
+          ...scopes,
+        ],
+      });
+
+      projectId = credentials.project_id;
+      taskLib.debug(`Authenticated as ${credentials.client_email} for project "${projectId}"`);
+    } else if (authMethod === 'jsonFile' || isInTest) {
+      // Secure file
+      let filename;
+      let downloadPath = '';
+      let secureFilePath = '';
+
+      if (isInTest) {
+        console.log('Testing! Using local "credentials.json" file');
+        secureFilePath = 'credentials.json';
+      } else {
+        const secureFileId = taskLib.getInput('jsonCredentials', true);
+        filename = taskLib.getSecureFileName(secureFileId);
+        downloadPath = taskLib.resolve(taskLib.getVariable('Agent.TempDirectory'), filename);
+        const ticket = taskLib.getSecureFileTicket(secureFileId);
+        const project = taskLib.getVariable('SYSTEM.TEAMPROJECT');
+        const proxy = taskLib.getHttpProxyConfiguration();
+        const collectionUri = taskLib.getVariable('System.TeamFoundationCollectionUri');
+        const credential = taskLib.getEndpointAuthorizationParameter('SYSTEMVSSCONNECTION', 'ACCESSTOKEN', false);
+
+        try {
+          taskLib.debug(`Downloading secure file "${filename}" with credentials...`);
+          const secureFileHelpers = new SecureFileHelpers(collectionUri, credential, proxy, 3);
+          secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId, downloadPath, ticket, project);
+        } catch (error) {
+          console.log(`Error while downloading credentials: ${error.message}`);
+          throw error;
+        }
+
+        taskLib.debug(`Secure file path is ${JSON.stringify(secureFilePath)}`);
+      }
+
+      if (!taskLib.exist(secureFilePath)) {
+        taskLib.error(`Secure file not founded at ${secureFilePath}`);
+        taskLib.setResult(taskLib.TaskResult.Failed);
+        return null;
+      }
+
+      auth = new GoogleAuth({
+        keyFile: secureFilePath,
+        // Scopes can be specified either as an array or as a single, space-delimited string.
+        scopes: [
+          'https://www.googleapis.com/auth/cloud-platform',
+          ...scopes,
+        ],
+      });
+
+      projectId = await auth.getFileProjectId();
+      taskLib.debug(`Authenticated with JSON file for project "${projectId}"`);
+
+      // Remove secure file
+      try {
+        taskLib.debug('Remove downloaded secure file');
+        if (taskLib.exist(downloadPath)) taskLib.rmRF(downloadPath);
+      } catch (error) {
+        console.log(`Erro while deleting secure file: ${error.message}`);
+      }
+    }
+
+    // Acquire an auth client, and bind it to all future calls
+    const client = await auth.getClient();
+    return { client, projectId };
+  } catch (error) {
+    taskLib.error(`Failed to authenticate in Google Cloud: ${error.message}`);
+    taskLib.debug(error.stack);
+    taskLib.debug(JSON.stringify(error));
+    taskLib.setResult(taskLib.TaskResult.Failed);
+    return null;
+  }
+}
 
 /**
  * Check a result of a Rest call and fail task when response is not successful.
  *
- * @param {import('gaxios').GaxiosResponse<import('googleapis').cloudfunctions_v1.Schema$Operation>} res The Rest API response
- * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The metadata of the operation.
+ * @param {import('gaxios').GaxiosResponse} res The Rest API response
+ * @returns {*} The metadata of the operation.
  */
 function checkResultAndGetMetadata(res) {
   taskLib.debug('Result from operation:');
-  taskLib.debug(JSON.stringify(res));
+  taskLib.debug(JSON.stringify({
+    status: res.status,
+    statusText: res.statusText,
+    data: res.data,
+  }));
 
   if (res.status >= 400 || !res.data) {
-    if (res.data.error) {
+    if (res.data && res.data.error) {
       taskLib.error(`${res.data.error.code} - ${res.data.error.message}`);
       taskLib.debug(res.data.error.details.join('\n'));
     }
@@ -30,72 +162,6 @@ function checkResultAndGetMetadata(res) {
   }
 
   return res.data && res.data.metadata;
-}
-
-/**
- * Upload the Zip file with source code to the cloud.
- *
- * @param {*} auth Google Auth Client
- * @param {String} project Full project identification
- * @param {String} zipFile Path to the zip file
- * @returns {String} Return the url of the file uploaded.
- */
-async function uploadFile(auth, project, zipFile) {
-  taskLib.debug(`Generate Upload URL for ${project}`);
-
-  // Generate the URL to upload the file
-  const storageResult = await cloudFunctions.projects.locations.functions.generateUploadUrl({
-    auth,
-    // The project and location in which the Google Cloud Storage signed URL
-    // should be generated, specified in the format `projects/x/locations/x`.
-    parent: project,
-  });
-
-  const url = storageResult.data && storageResult.data.uploadUrl;
-
-  taskLib.debug(`Upload URL generated: ${url}`);
-
-  if (!url) {
-    taskLib.warning('Zip File could not be uploaded to Google (empty upload URL)');
-    return '';
-  }
-
-  // Upload file
-  console.log('Uploading source code file...');
-  taskLib.debug(`Uploading file ${zipFile} to ${project}`);
-
-  try {
-    const stats = fs.statSync(zipFile);
-    const readStream = fs.createReadStream(zipFile);
-
-    if (stats.size >= 104857600) {
-      taskLib.warning(`Zip file is bigger than the allowed size of 100MB. Total: ${stats.size / (1024 * 1024)}MB`);
-    }
-
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/zip',
-        'Content-Length': stats.size,
-        'x-goog-content-length-range': '0,104857600',
-      },
-      body: readStream,
-    });
-
-    if (res.status >= 400) {
-      taskLib.error(`Upload status code is ${res.status}`);
-      taskLib.debug(await res.text());
-    }
-
-    console.log('File uploaded!');
-  } catch (error) {
-    taskLib.error(`Error when uploading source file: ${error.message}`);
-    taskLib.debug(error.stack);
-  }
-
-  // Finish
-  taskLib.debug(`Uploaded URL is ${url}`);
-  return url;
 }
 
 /**
@@ -160,38 +226,168 @@ function findMatchingFiles(filepath) {
 }
 
 /**
- * Deploy new version of the Function to the cloud.
+ * Converts an input text to a number
  *
- * @param {*} auth Google Auth Client
- * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
- * @param {String} name Function name
- * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
+ * @param {String} name Task input name
+ * @param {Boolean} [required=false]
+ * @returns {Number} The number converted from string or `undefined`
  */
-async function deployFunction(auth, location, name, mode, sourceValue) {
-  const request = {
-    auth,
-    name: `${location}/functions/${name}`,
-    updateMask: '',
-    requestBody: {},
-  };
+function getInputNumber(name, required = false) {
+  try {
+    const value = taskLib.getInput(name, required);
+    return value ? parseFloat(value) : undefined;
+  } catch (error) {
+    taskLib.debug(`Error get the number of ${name}: ${error.message}`);
+    return undefined;
+  }
+}
 
-  // mode
+/**
+ * Get a list of properties from a deep object.
+ *
+ * @param {Object} obj The object to get the keys
+ * @returns {string[]} The paths of object keys.
+ */
+function propertiesToArray(obj) {
+  const isObject = (val) => typeof val === 'object' && !Array.isArray(val);
+
+  const addDelimiter = (a, b) => (a ? `${a}.${b}` : b);
+
+  // eslint-disable-next-line no-shadow
+  const paths = (obj = {}, head = '') => Object.entries(obj)
+    .reduce((product, [key, value]) => {
+      const fullPath = addDelimiter(head, key);
+      return isObject(value)
+        ? product.concat(paths(value, fullPath))
+        : product.concat(fullPath);
+    }, []);
+
+  return paths(obj);
+}
+
+/**
+ * Export task output variables based on the response.
+ *
+ * @param {cloudfunctions_v1.Schema$CloudFunction} result The metadata of the function
+ */
+function setOutput(result) {
+  if (result.httpsTrigger && result.httpsTrigger.url) {
+    taskLib.setVariable('FunctionUrl', result.httpsTrigger.url);
+  }
+
+  taskLib.setVariable('FunctionVersionId', result.versionId);
+}
+// #endregion Utils
+
+// #region Operations
+/**
+ * Upload the Zip file with source code to the cloud.
+ *
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {String} project Full project identification
+ * @param {String} zipFile Path to the zip file
+ * @returns {String} Return the url of the file uploaded.
+ */
+async function uploadFile(client, project, zipFile) {
+  taskLib.debug(`Generate Upload URL for ${project}`);
+
+  // Generate the URL to upload the file
+  let storageResult;
+  try {
+    storageResult = await client.request({
+      method: 'POST',
+      url: `${apiUrl}/${project}/functions:generateUploadUrl`,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  const url = storageResult.data && storageResult.data.uploadUrl;
+
+  taskLib.debug(`Upload URL generated: ${url}`);
+
+  if (!url) {
+    taskLib.warning('Zip File could not be uploaded to Google (empty upload URL)');
+    return '';
+  }
+
+  // Upload file
+  console.log('Uploading source code file...');
+  taskLib.debug(`Uploading file ${zipFile} to ${project}`);
+
+  try {
+    const stats = fs.statSync(zipFile);
+    const readStream = fs.createReadStream(zipFile);
+
+    if (stats.size >= 104857600) {
+      taskLib.warning(`Zip file is bigger than the allowed size of 100MB. Total: ${stats.size / (1024 * 1024)}MB`);
+    }
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/zip',
+        'Content-Length': stats.size,
+        'x-goog-content-length-range': '0,104857600',
+      },
+      body: readStream,
+    });
+
+    if (res.status >= 400) {
+      taskLib.error(`Upload status code is ${res.status}`);
+      taskLib.debug(await res.text());
+    }
+
+    console.log('File uploaded!');
+  } catch (error) {
+    taskLib.error(`Error when uploading source file: ${error.message}`);
+    taskLib.debug(error.stack);
+  }
+
+  // Finish
+  taskLib.debug(`Uploaded URL is ${url}`);
+  return url;
+}
+
+/**
+ * @typedef {Object} CheckSourceResult
+ * @property {String} updateMask The changed properties
+ * @property {String} requestBody Request body to call API
+ */
+
+/**
+ * Check function code source and upload file (if is needed)
+ *
+ * @param @param {OAuth2Client} client Google Auth Client
+ * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
+ * @param {String} mode Source selected mode
+ * @param {String} sourceValue The path of the zip, or storage or repository
+ * @returns {CheckSourceResult} The update mask and request body
+ */
+async function checkSource(client, location, mode, sourceValue) {
+  let updateMask = '';
+  const requestBody = {};
+
   switch (mode) {
     case 'storage': {
       const storagePath = sourceValue;
       taskLib.debug(`Using Google Storage Zip file as source code at ${storagePath}`);
-      request.requestBody.sourceArchiveUrl = storagePath;
-      request.updateMask = 'sourceArchiveUrl';
+      requestBody.sourceArchiveUrl = storagePath;
+      updateMask = 'sourceArchiveUrl';
       break;
     }
 
     case 'repo': {
       const sourceRepo = sourceValue;
       taskLib.debug(`Using Google Repository as source code at ${sourceRepo}`);
-      request.requestBody.sourceRepository = {
+      requestBody.sourceRepository = {
         url: sourceRepo,
       };
-      request.updateMask = 'sourceRepository.url';
+      updateMask = 'sourceRepository.url';
       break;
     }
 
@@ -209,8 +405,8 @@ async function deployFunction(auth, location, name, mode, sourceValue) {
       }
 
       console.log(`Using Zip file ${files[0]} as the source code.`);
-      request.requestBody.sourceUploadUrl = await uploadFile(auth, location, files[0]);
-      request.updateMask = 'sourceUploadUrl';
+      requestBody.sourceUploadUrl = await uploadFile(client, location, files[0]);
+      updateMask = 'sourceUploadUrl';
       break;
     }
 
@@ -218,27 +414,42 @@ async function deployFunction(auth, location, name, mode, sourceValue) {
       break;
   }
 
-  taskLib.debug('Requesting GCP with data:');
-  taskLib.debug(JSON.stringify(request));
-  const res = await cloudFunctions.projects.locations.functions.patch(request);
-  return checkResultAndGetMetadata(res);
+  return { updateMask, requestBody };
 }
 
 /**
- * Converts an input text to a number
+ * Deploy new version of the Function to the cloud.
  *
- * @param {String} name Task input name
- * @param {Boolean} [required=false]
- * @returns {Number} The number converted from string or `undefined`
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
+ * @param {String} name Function name
+ * @param {String} sourceValue The path of the zip, or storage or repository
+ * @returns {Object} The function metadata.
  */
-function getInputNumber(name, required = false) {
+async function deployFunction(client, location, name, mode, sourceValue) {
+  // mode
+  const { updateMask, requestBody } = await checkSource(client, location, mode, sourceValue);
+
+  taskLib.debug('Requesting GCP with data:');
+  taskLib.debug(JSON.stringify(requestBody));
+
+  let res;
   try {
-    const value = taskLib.getInput(name, required);
-    return value ? parseFloat(value) : undefined;
+    res = await client.request({
+      method: 'PATCH',
+      url: `${apiUrl}/${location}/functions/${name}?updateMask=${updateMask}`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
   } catch (error) {
-    taskLib.debug(`Error get the number of ${name}: ${error.message}`);
-    return undefined;
+    console.error(JSON.stringify(error.response.data));
+    throw error;
   }
+
+  return checkResultAndGetMetadata(res);
 }
 
 /**
@@ -334,7 +545,7 @@ async function getCreateResquestBody(location, name) {
   }
 
   // Check for labels
-  const labels = taskLib.getInput('gcpLabels', false);
+  const labels = taskLib.getInput('gcpLabels', false) || '';
 
   if (labels.substring(0, 1) === '{') {
     // JSON
@@ -359,96 +570,80 @@ async function getCreateResquestBody(location, name) {
 /**
  * Create a new Function in the GCP.
  *
- * @param {*} auth Google Auth Client
+ * @param {OAuth2Client} client Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
  */
-async function createFunction(auth, location, name) {
-  const req = await getCreateResquestBody(location, name);
+async function createFunction(client, location, name) {
+  let res;
+
+  // Fix name
+  const funcName = name.split('/').length === 6 ? name : `${location}/functions/${name}`;
+
+  // Get body
+  const req = await getCreateResquestBody(location, funcName);
+
+  // Get source
+  let sourceValue = '';
+  const sourceMode = taskLib.getInput('funcSourceMode', false) || 'zip';
+
+  switch (sourceMode) {
+    case 'storage': {
+      sourceValue = taskLib.getInput('funcSourceArchive', false);
+      break;
+    }
+
+    case 'repo': {
+      sourceValue = taskLib.getInput('funcSourceRepo', false);
+      break;
+    }
+
+    case 'zip': {
+      sourceValue = taskLib.getPathInput('funcSourceZip', true, false);
+      break;
+    }
+
+    default:
+      break;
+  }
+
+  const { requestBody } = await checkSource(client, location, sourceMode, sourceValue);
+  Object.assign(req, requestBody);
+
   taskLib.debug('Calling Google API to create the function, with the request:');
   taskLib.debug(JSON.stringify(req));
 
   // Create
   console.log(`Creating function ${location}`);
-  const res = await cloudFunctions.projects.locations.functions.create({
-    auth,
-    // Required. The project and location in which the function should be created, specified
-    // in the format `projects/x/locations/x`
-    location,
-    requestBody: req,
-  });
-
-  const createResult = checkResultAndGetMetadata(res);
-
-  if (createResult) {
-    console.log('Function created!');
-
-    // Get source mode
-    let sourceValue = '';
-    const sourceMode = taskLib.getInput('funcSourceMode', false) || 'zip';
-
-    switch (sourceMode) {
-      case 'storage': {
-        sourceValue = taskLib.getInput('funcSourceArchive', false);
-        break;
-      }
-
-      case 'repo': {
-        sourceValue = taskLib.getInput('funcSourceRepo', false);
-        break;
-      }
-
-      case 'zip': {
-        sourceValue = taskLib.getPathInput('funcSourceZip', true, true);
-        break;
-      }
-
-      default:
-        break;
-    }
-
-    // Upload source code
-    const deployResult = await deployFunction(auth, location, name, sourceMode, sourceValue);
-    checkResultAndGetMetadata(deployResult);
+  try {
+    res = await client.request({
+      method: 'POST',
+      url: `${apiUrl}/${location}/functions`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req),
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
   }
 
-  return createResult;
-}
-
-/**
- * Get a list of properties from a deep object.
- *
- * @param {Object} obj The object to get the keys
- * @returns {string[]} The paths of object keys.
- */
-function propertiesToArray(obj) {
-  const isObject = (val) => typeof val === 'object' && !Array.isArray(val);
-
-  const addDelimiter = (a, b) => (a ? `${a}.${b}` : b);
-
-  // eslint-disable-next-line no-shadow
-  const paths = (obj = {}, head = '') => Object.entries(obj)
-    .reduce((product, [key, value]) => {
-      const fullPath = addDelimiter(head, key);
-      return isObject(value)
-        ? product.concat(paths(value, fullPath))
-        : product.concat(fullPath);
-    }, []);
-
-  return paths(obj);
+  return checkResultAndGetMetadata(res);
 }
 
 /**
  * Update the changed properties of the existing Function.
  *
- * @param {*} auth Google Auth Client
+ * @param {OAuth2Client} client Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @param {Object} currentProperties Current properties to compare with the changed values
  * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
  */
-async function updateFunction(auth, location, name, currentProperties) {
+async function updateFunction(client, location, name, currentProperties) {
   taskLib.debug('Update Function');
   const req = await getCreateResquestBody(location, name);
 
@@ -474,15 +669,25 @@ async function updateFunction(auth, location, name, currentProperties) {
   // Get only changed props
   const changedProps = deepDiff(currentProperties, req) || {};
   const updateMask = propertiesToArray(changedProps).join(',');
+  const qsMask = encodeURIComponent(updateMask);
   taskLib.debug(`Changed attributes are: ${updateMask}`);
   console.log(`Updating function ${location}/functions/${name}`);
 
-  const res = await cloudFunctions.projects.locations.functions.patch({
-    auth,
-    name: `${location}/functions/${name}`,
-    updateMask,
-    requestBody: diff,
-  });
+  let res;
+  try {
+    res = await client.request({
+      method: 'PATCH',
+      url: `${apiUrl}/${location}/functions/${name}?updateMask=${qsMask}`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req),
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
 
   console.log('Function updated!');
 
@@ -492,17 +697,17 @@ async function updateFunction(auth, location, name, currentProperties) {
 /**
  * Get function properties data.
  *
- * @param {*} auth Google Auth Client
+ * @param {OAuth2Client} client Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
  */
-async function getFunction(auth, location, name) {
+async function getFunction(client, location, name) {
   taskLib.debug(`Check existence of ${location}/functions/${name}`);
   try {
-    const res = await cloudFunctions.projects.locations.functions.get({
-      auth,
-      name: `${location}/functions/${name}`,
+    const res = await client.request({
+      method: 'GET',
+      url: `${apiUrl}/${location}/functions/${name}`,
     });
 
     if (res && res.data && res.status === 200) {
@@ -512,6 +717,7 @@ async function getFunction(auth, location, name) {
 
     taskLib.debug(`getFunction return the status code: ${res.status}`);
   } catch (error) {
+    console.error(JSON.stringify(error.response.data));
     taskLib.debug(`Check error: ${error.message}`);
   }
 
@@ -521,17 +727,27 @@ async function getFunction(auth, location, name) {
 /**
  * Delete the resource from GCP.
  *
- * @param {*} auth Google Auth Client
+ * @param {OAuth2Client} client Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @returns {import('googleapis').cloudfunctions_v1.Schema$CloudFunction} The function metadata.
  */
-async function deleteFunction(auth, location, name) {
+async function deleteFunction(client, location, name) {
   console.log(`Removing Function ${location}/functions/${name}`);
-  const res = await cloudFunctions.projects.locations.functions.delete({
-    auth,
-    name: `${location}/functions/${name}`,
-  });
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'DELETE',
+      url: `${apiUrl}/${location}/functions/${name}`,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
 
   return checkResultAndGetMetadata(res);
 }
@@ -539,43 +755,37 @@ async function deleteFunction(auth, location, name) {
 /**
  * Make a call to the function.
  *
- * @param {*} auth Google Auth Client
+ * @param {OAuth2Client} client Google Auth Client
  * @param {String} location `projects/{project_id}/locations/{location_id}` of the function
  * @param {String} name Function name
  * @returns {String} Return the response body.
  */
-async function callFunction(auth, location, name) {
+async function callFunction(client, location, name) {
   console.log(`Calling Function ${location}/functions/${name}`);
   const callData = taskLib.getInput('funcCallData');
 
-  const firstChar = callData.substring(0, 1);
-  taskLib.debug(`First char of data is ${firstChar}`);
-
-  const data = (firstChar === '[' || firstChar === '{') ? JSON.parse(callData) : callData;
-  taskLib.debug(`Data to call the function: ${callData}`);
-  const res = await cloudFunctions.projects.locations.functions.call({
-    auth,
-    name: `${location}/functions/${name}`,
-    requestBody: data,
-  });
-
-  console.log(`Id of the invocation: ${res.data && res.data.executionId}`);
-  taskLib.debug(`Result of invocation: ${res.data && res.data.result}`);
-  return res.data && res.data.result;
-}
-
-/**
- * Export task output variables based on the response.
- *
- * @param {cloudfunctions_v1.Schema$CloudFunction} result The metadata of the function
- */
-function setOutput(result) {
-  if (result.httpsTrigger && result.httpsTrigger.url) {
-    taskLib.setVariable('FunctionUrl', result.httpsTrigger.url);
+  let res;
+  try {
+    res = await client.request({
+      method: 'POST',
+      url: `${apiUrl}/${location}/functions/${name}:call`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data: callData }),
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
   }
 
-  taskLib.setVariable('FunctionVersionId', result.versionId);
+  taskLib.debug('Result of invocation:');
+  taskLib.debug(JSON.stringify(res.data));
+  console.log(`Id of the invocation: ${res.data && res.data.executionId}`);
+  return res.data && res.data.result;
 }
+// #endregion Operations
 
 /**
  * Main function
@@ -585,73 +795,17 @@ async function main() {
   let taskSuccess = false;
 
   try {
-    // Get authentication method
-    let jsonCredential = '';
-    const authMethod = taskLib.getInput('authenticationMethod', true);
-
-    if (authMethod === 'serviceAccount') {
-      const account = taskLib.getInput('SCserviceAccount', true);
-      const schema = taskLib.getEndpointAuthorizationScheme(account);
-      taskLib.debug(`Authorization schema is ${schema}`);
-
-      if (schema === 'ms.vss-endpoint.endpoint-auth-scheme-oauth2') {
-        const authSc = taskLib.getEndpointAuthorization(account);
-        taskLib.debug(JSON.stringify(authSc));
-      } else {
-        jsonCredential = taskLib.getEndpointAuthorizationParameter(account, 'certificate', false);
-        taskLib.debug('Recovered JSON file contents');
-      }
-
-      taskLib.debug('Using Service Connection authentication');
-    } else if (authMethod === 'jsonFile') {
-      const secureFileId = taskLib.getInput('jsonCredentials', true);
-      const secureFileHelpers = new secureFilesCommon.SecureFileHelpers();
-      const secureFilePath = await secureFileHelpers.downloadSecureFile(secureFileId);
-
-      if (taskLib.exist(secureFilePath)) {
-        jsonCredential = fs.readFileSync(secureFilePath, { encoding: 'utf8' });
-      } else {
-        taskLib.error(`Secure file not founded at ${secureFilePath}`);
-        taskLib.setResult(taskLib.TaskResult.Failed);
-        return;
-      }
-    }
-
-    // Fix line breaks in private key before parse JSON
-    const privateKeyIni = jsonCredential.indexOf('-----BEGIN PRIVATE KEY-----');
-    const privateKeyEnd = jsonCredential.indexOf('",', privateKeyIni);
-    const escapedKey = jsonCredential.substring(privateKeyIni, privateKeyEnd).replace(/\n/g, '\\n');
-    const jsonStart = jsonCredential.substring(0, privateKeyIni);
-    const jsonEscaped = jsonStart + escapedKey + jsonCredential.substr(privateKeyEnd);
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: JSON.parse(jsonEscaped),
-      // Scopes can be specified either as an array or as a single, space-delimited string.
-      scopes: [
-        'https://www.googleapis.com/auth/cloud-platform',
-        'https://www.googleapis.com/auth/cloudfunctions',
-      ],
-    });
-
-    // Acquire an auth client, and bind it to all future calls
-    const authClient = await auth.getClient();
-    google.options('auth', authClient);
-
-    // Get info about credential
-    if (jsonCredential) {
-      const credentials = JSON.parse(jsonCredential);
-      taskLib.debug(`Authenticated as ${credentials.client_email}`);
-    } else {
-      taskLib.debug('Authenticated (JSON could not be read.');
-    }
+    // Get authentication
+    const auth = await getAuthenticatedClient([
+      'https://www.googleapis.com/auth/cloudfunctions',
+    ]);
 
     // Check operation
     const op = taskLib.getInput('operation', false);
 
     // Get some basic info
-    const projectId = taskLib.getInput('gcpProject', true);
     const region = taskLib.getInput('gcpRegion', true);
-    const location = `projects/${projectId}/locations/${region}`;
+    const location = `projects/${auth.projectId}/locations/${region}`;
     const name = taskLib.getInput('funcName', true);
 
     switch (op) {
@@ -664,36 +818,46 @@ async function main() {
 
         // Check if the function already exists
         console.log('Checking if the Function already exists...');
-        const func = await getFunction(authClient, location, name);
+        const func = await getFunction(auth.client, location, name);
 
         if (!func) {
           // Create
           console.log(`Function ${name} not found in ${location}.`);
-          result = await createFunction(authClient, location, name);
+          result = await createFunction(auth.client, location, name);
         } else {
           // Update
-          result = await updateFunction(authClient, location, name, func);
+          result = await updateFunction(auth.client, location, name, func);
         }
 
         // Check if unauthenticated access is allowed
         if (taskLib.getBoolInput('funcHttpsAnonym', false)) {
           try {
             console.log('Enabling public access...');
+            let res;
 
-            const res = await cloudFunctions.projects.locations.functions.setIamPolicy({
-              auth: authClient,
-              resource: `${location}/functions/${name}`,
-              requestBody: {
-                policy: {
-                  bindings: [
-                    {
-                      role: 'roles/cloudfunctions.invoker',
-                      members: ['allUsers'],
-                    },
-                  ],
+            try {
+              res = await auth.client.request({
+                method: 'POST',
+                url: `${apiUrl}/${location}/functions/${name}:setIamPolicy`,
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
                 },
-              },
-            });
+                body: JSON.stringify({
+                  policy: {
+                    bindings: [
+                      {
+                        role: 'roles/cloudfunctions.invoker',
+                        members: ['allUsers'],
+                      },
+                    ],
+                  },
+                }),
+              });
+            } catch (error) {
+              console.error(JSON.stringify(error.response.data));
+              throw error;
+            }
 
             taskLib.debug(`Status code of allow anonym access is ${res.status}`);
 
@@ -710,16 +874,14 @@ async function main() {
         setOutput(result);
 
         // Success?
-        taskSuccess = ['ACTIVE', 'DEPLOY_IN_PROGRESS'].some((s) => s === result.request.status);
+        console.log();
+        taskSuccess = ['CREATE_FUNCTION', 'UPDATE_FUNCTION'].includes(result.type);
         break;
       }
 
       case 'delete': {
-        const result = await deleteFunction(authClient, location, name);
-        taskSuccess = [
-          'DELETE_IN_PROGRESS',
-          'UNKNOWN',
-          'CLOUD_FUNCTION_STATUS_UNSPECIFIED'].some((s) => s === result.request.status);
+        const result = await deleteFunction(auth.client, location, name);
+        taskSuccess = result.type === 'DELETE_FUNCTION';
         break;
       }
 
@@ -747,13 +909,13 @@ async function main() {
             break;
         }
 
-        const result = await deployFunction(authClient, location, name, sourceMode, sourceValue);
+        const result = await deployFunction(auth.client, location, name, sourceMode, sourceValue);
         taskSuccess = ['ACTIVE', 'DEPLOY_IN_PROGRESS'].some((s) => s === result.request.status);
         break;
       }
 
       case 'call': {
-        const callResult = await callFunction(authClient, location, name);
+        const callResult = await callFunction(auth.client, location, name);
         taskSuccess = !!callResult;
         taskLib.setVariable('FunctionCallResult', callResult);
         break;

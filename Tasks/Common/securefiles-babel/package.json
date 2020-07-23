@@ -1,0 +1,41 @@
+{
+  "name": "securefiles-babel",
+  "version": "1.0.0",
+  "description": "Download task secure files",
+  "main": "securefiles-common-compiled.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx babel securefiles-common.js --out-file securefiles-common-compiled.js --ignore node_modules/**/*"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "azure-devops-node-api": "^10.1.1"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "6.10"
+          }
+        }
+      ]
+    ],
+    "plugins": [],
+    "env": {
+      "debug": {
+        "sourceMaps": "inline",
+        "retainLines": true
+      }
+    }
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.10.5",
+    "@babel/core": "^7.10.5",
+    "@babel/node": "^7.10.5",
+    "@babel/polyfill": "^7.10.4",
+    "@babel/preset-env": "^7.10.4"
+  }
+}
