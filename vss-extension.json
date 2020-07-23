@@ -48,8 +48,8 @@
             "displayName": "JSON Key file contents",
             "inputDescriptors": [{
               "id": "certificate",
-              "name": "Json Text",
-              "description": "The contents of the json key file",
+              "name": "JSON Content",
+              "description": "The contents of the json key file (credentials). [Learn more](https://github.com/nexsolab/azure-devops-google-cloud-tools/blob/master/SERVICECONN.md)",
               "inputMode": "TextArea",
               "isConfidential": true,
               "validation": {
