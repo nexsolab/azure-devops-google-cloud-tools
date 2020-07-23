@@ -24,6 +24,7 @@ Search for "Google Cloud" when adding a new task or go to theAzure DevOps Market
 ## Service Connection
 
 You can configure a service connection to use in the tasks.
+[Learn more on how to configure here](SERVICECONN.md)
 
 ![](images/scmenu.png)
 
