@@ -1,0 +1,139 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
+  "id": "5a7067c0-afc3-474f-8c55-3769fa0f3c9e",
+  "name": "GoogleCloudPubSub",
+  "friendlyName": "Google Cloud PubSub Topic",
+  "description": "Manage PubSub Topics and queue messages",
+  "helpUrl": "https://github.com/nexsolab/azure-devops-google-cloud-tools",
+  "helpMarkDown": "[Learn more about this task](https://github.com/nexsolab/azure-devops-google-cloud-tools#readme) or [see the Cloud PubSub documentation](https://cloud.google.com/pubsub/docs/reference/rest/v1/projects.topics)",
+  "category": "Deploy",
+  "runsOn": ["Agent"],
+  "visibility": ["Build", "Release"],
+  "author": "Gabriel Anderson",
+  "instanceNameFormat": "Cloud PubSub - $(operation) topic $(topicName)",
+  "version": {
+    "Major": 0,
+    "Minor": 1,
+    "Patch": 0
+  },
+  "groups": [{
+    "name": "GCPResourceOptions",
+    "displayName": "Google Cloud resource options",
+    "isExpanded": false,
+    "visibleRule": "operation = create"
+  }],
+  "inputs": [{
+      "name": "authenticationMethod",
+      "type": "pickList",
+      "label": "Authentication method",
+      "defaultValue": "serviceAccount",
+      "options": {
+        "serviceAccount": "Service Account (Connected Service)",
+        "jsonFile": "JSON file credentials"
+      },
+      "helpMarkDown": "Authorization requires the following Google IAM roles:<br />`roles/dns.admin`"
+    },
+    {
+      "name": "SCserviceAccount",
+      "type": "connectedService:GoogleCloudServiceEndpoint",
+      "label": "Google Cloud Service Account",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Select the Service Account that should be used for the next steps",
+      "visibleRule": "authenticationMethod = serviceAccount"
+    },
+    {
+      "name": "jsonCredentials",
+      "type": "secureFile",
+      "label": "JSON Credentials file",
+      "required": true,
+      "defaultValue": "",
+      "helpMarkDown": "Select the JSON file with the credentials, see for more information",
+      "visibleRule": "authenticationMethod = jsonFile"
+    },
+    {
+      "name": "operation",
+      "type": "pickList",
+      "label": "Operation",
+      "required": true,
+      "defaultValue": "publish",
+      "options": {
+        "create": "Create/Update topic",
+        "delete": "Delete topic",
+        "publish": "Publish message to"
+      }
+    },
+    {
+      "name": "topicName",
+      "type": "string",
+      "label": "Topic name",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "[See the resource name rules.](https://cloud.google.com/pubsub/docs/admin#resource_names)"
+    },
+    {
+      "name": "topicKmsKey",
+      "type": "string",
+      "label": "KMS Key name",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "The resource name of the Cloud KMS CryptoKey to be used to protect access to messages published on this topic.<br>The expected format is projects/*/locations/*/keyRings/*/cryptoKeys/*.",
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "topicPersistenceRegions",
+      "type": "string",
+      "label": "Allowed Persistence Regions (comma-separated)",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "A list of IDs of GCP regions where messages that are published to the topic may be persisted in storage. Messages published by publishers running in non-allowed GCP regions (or running outside of GCP altogether) will be routed for storage in one of the allowed regions. An empty list means that no regions are allowed, and is not a valid configuration.",
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "messageData",
+      "type": "string",
+      "label": "Message to be queued to the topic",
+      "defaultValue": "",
+      "required": true,
+      "visibleRule": "operation = publish"
+    },
+    {
+      "name": "messageAttributes",
+      "type": "multiLine",
+      "label": "Message attributes",
+      "defaultValue": "",
+      "required": false,
+      "visibleRule": "operation = publish",
+      "helpMarkDown": "Attributes for this message. This can be used to filter messages on the subscription.",
+      "properties": {
+        "editorExtension": "ms.vss-services-azure.parameters-grid"
+      }
+    },
+    {
+      "name": "gcpLabels",
+      "type": "multiLine",
+      "label": "Resource labels",
+      "groupName": "GCPResourceOptions",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Put JSON or use the editor.<br />**Keys** must start with a lowercase character and contain only hyphens (\\-), underscores (\\_), lowercase characters, and numbers.<br />**Values** must contain only hyphens (\\-), underscores (\\_), lowercase characters, and numbers.",
+      "properties": {
+        "editorExtension": "ms.vss-services-azure.parameters-grid"
+      }
+    }
+  ],
+  "OutputVariables": [
+    {
+      "name": "DnsRecordValue",
+      "description": "The current data value of the record."
+    }
+  ],
+  "minimumAgentVersion": "2.144.0",
+  "execution": {
+    "Node10": {
+      "target": "main.js",
+      "argumentFormat": ""
+    }
+  },
+  "messages": {}
+}

@@ -1,16 +1,15 @@
 {
-  "name": "googlecloudfunctions",
+  "name": "googlecloudpubsub",
   "version": "1.0.0",
-  "description": "Deploy code to GCP Functions or create, remove and call functions",
+  "description": "Create GCP PubSub topics and subscribe to them",
   "main": "main.js",
   "scripts": {
     "test": "mocha ./src/main.test.js",
-    "testlocal": "mocha -r esm -r dotenv/config ./src/main.test.js",
     "build": "npx babel src --out-dir dist --copy-files --ignore node_modules/**/*"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions"
+    "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudPubSub"
   },
   "keywords": [
     "azure",
@@ -26,7 +25,13 @@
     "deploy",
     "task",
     "iac",
-    "functions"
+    "pubsub",
+    "subscription",
+    "subscribe",
+    "publish",
+    "topic",
+    "queue",
+    "message"
   ],
   "author": {
     "name": "Gabriel Anderson",
@@ -36,11 +41,10 @@
   "bugs": {
     "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
   },
-  "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions#readme",
+  "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudPubSub#readme",
   "dependencies": {
     "azure-pipelines-task-lib": "^2.9.6",
     "google-auth-library": "^6.0.5",
-    "node-fetch": "^2.6.0",
     "return-deep-diff": "^0.4.0",
     "securefiles-babel": "file:../Common/securefiles-babel"
   },
@@ -69,8 +73,6 @@
     "@babel/node": "^7.10.5",
     "@babel/polyfill": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
-    "babel-eslint": "^10.1.0",
-    "dotenv": "^8.2.0",
-    "esm": "^3.2.25"
+    "babel-eslint": "^10.1.0"
   }
 }
