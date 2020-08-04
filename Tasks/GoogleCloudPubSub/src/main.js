@@ -514,6 +514,8 @@ async function main() {
       default:
         break;
     }
+
+    taskLib.setVariable('PubSubTopic', `projects/${auth.projectId}/topics/${name}`);
   } catch (error) {
     console.error(`Failed: ${error.message}`);
     taskLib.debug(error);
