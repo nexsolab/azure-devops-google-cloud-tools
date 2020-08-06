@@ -16,42 +16,44 @@
     "Minor": 1,
     "Patch": 0
   },
-  "groups": [{
-    "name": "GCPResourceOptions",
-    "displayName": "Google Cloud resource options",
-    "isExpanded": false,
-    "visibleRule": "operation = create"
-  },
-  {
-    "name": "PushConfig",
-    "displayName": "Push Config",
-    "isExpanded": true,
-    "visibleRule": "operation = subscribe && (subMode = auto || subMode = push)" 
-  },
-  {
-    "name": "RetainPolicy",
-    "displayName": "Retain Policy",
-    "isExpanded": true,
-    "visibleRule": "operation = subscribe" 
-  },
-  {
-    "name": "ExpirationPolicy",
-    "displayName": "Expiration Policy",
-    "isExpanded": true,
-    "visibleRule": "operation = subscribe" 
-  },
-  {
-    "name": "RetryPolicy",
-    "displayName": "Retry Policy",
-    "isExpanded": true,
-    "visibleRule": "operation = subscribe" 
-  },
-  {
-    "name": "DeadLetterPolicy",
-    "displayName": "Dead Letter Policy",
-    "isExpanded": false,
-    "visibleRule": "operation = subscribe" 
-  }],
+  "groups": [
+    {
+      "name": "GCPResourceOptions",
+      "displayName": "Google Cloud resource options",
+      "isExpanded": false,
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "PushConfig",
+      "displayName": "Push Config",
+      "isExpanded": true,
+      "visibleRule": "operation = subscribe && (subMode = auto || subMode = push)" 
+    },
+    {
+      "name": "RetainPolicy",
+      "displayName": "Retain Policy",
+      "isExpanded": true,
+      "visibleRule": "operation = subscribe" 
+    },
+    {
+      "name": "ExpirationPolicy",
+      "displayName": "Expiration Policy",
+      "isExpanded": true,
+      "visibleRule": "operation = subscribe" 
+    },
+    {
+      "name": "RetryPolicy",
+      "displayName": "Retry Policy",
+      "isExpanded": true,
+      "visibleRule": "operation = subscribe" 
+    },
+    {
+      "name": "DeadLetterPolicy",
+      "displayName": "Dead Letter Policy",
+      "isExpanded": false,
+      "visibleRule": "operation = subscribe" 
+    }
+  ],
   "inputs": [{
       "name": "authenticationMethod",
       "type": "pickList",
@@ -162,7 +164,8 @@
       "label": "Subscription name",
       "defaultValue": "",
       "required": true,
-      "visibleRule": "operation = subscribe || operation = delsub || operation = pause || operation = pull"
+      "visibleRule": "operation = subscribe || operation = delsub || operation = pause || operation = pull",
+      "helpMarkDown": "[Resource name rules](https://cloud.google.com/pubsub/docs/admin#resource_names)"
     },
     {
       "name": "subAckDeadlineSeconds",
@@ -171,6 +174,15 @@
       "defaultValue": "10",
       "required": false,
       "visibleRule": "operation = subscribe"
+    },
+    {
+      "name": "subMessageOrdering",
+      "type": "boolean",
+      "label": "Enable message ordering",
+      "defaultValue": false,
+      "required": false,
+      "visibleRule": "operation = subscribe",
+      "helpMarkDown": "If true, messages published with the same `orderingKey` in PubsubMessage will be delivered to the subscribers in the order in which they are received by the Pub/Sub system. Otherwise, they may be delivered in any order."
     },
     {
       "name": "subVpcSC",
@@ -215,7 +227,7 @@
     {
       "name": "subAutoThroughput",
       "type": "boolean",
-      "label": "Efficiency and throughput of message processing is critical.",
+      "label": "Efficiency and throughput of message processing is critical",
       "defaultValue": false,
       "required": false,
       "groupName": "MechanismAutoQuestions"
@@ -223,7 +235,7 @@
     {
       "name": "subAutoMultiple",
       "type": "boolean",
-      "label": "Multiple topics that must be processed by the same webhook.",
+      "label": "Multiple topics that must be processed by the same webhook",
       "defaultValue": false,
       "required": false,
       "groupName": "MechanismAutoQuestions"
@@ -231,7 +243,7 @@
     {
       "name": "subAutoServerless",
       "type": "boolean",
-      "label": "App Engine Standard and Cloud Functions subscribers.",
+      "label": "App Engine Standard and Cloud Functions subscribers",
       "defaultValue": false,
       "required": false,
       "groupName": "MechanismAutoQuestions"
@@ -239,7 +251,7 @@
     {
       "name": "subAutoPublic",
       "type": "radio",
-      "label": "Whether the resource can be accessed publicly or an environment where credentials are not feasible to set up.",
+      "label": "Whether the resource can be accessed publicly or an environment where credentials are not feasible to set up",
       "defaultValue": "pull",
       "required": false,
       "groupName": "MechanismAutoQuestions",
@@ -256,8 +268,8 @@
       "required": false,
       "groupName": "MechanismAutoQuestions",
       "options": {
-        "pull": "The subscriber client controls the rate of delivery.",
-        "push": "The Pub/Sub server automatically implements flow control."
+        "pull": "The subscriber client controls the rate of delivery",
+        "push": "The Pub/Sub server automatically implements flow control"
       }
     },
     {
@@ -347,7 +359,7 @@
       "name": "subExpires",
       "type": "boolean",
       "label": "Expire this subscription after inactivity",
-      "defaultValue": false,
+      "defaultValue": true,
       "required": false,
       "groupName": "ExpirationPolicy",
       "helpMarkDown": "A policy that specifies the conditions for this subscription's expiration. A subscription is considered active as long as any connected subscriber is successfully consuming messages from the subscription or is issuing operations on the subscription. If expirationPolicy is not set, a default policy with ttl of **31 days** will be used."
@@ -356,7 +368,7 @@
       "name": "subExpirationTtl",
       "type": "string",
       "label": "Subscription expiration TTL (in days)",
-      "defaultValue": "1",
+      "defaultValue": "31",
       "required": true,
       "groupName": "ExpirationPolicy",
       "helpMarkDown": "Specifies the time-to-live duration for an associated resource. The resource expires if it is not active for a period of ttl. A duration in seconds with up to nine fractional digits, terminated by `s`. Example: `3.5s.`<br>The minimum allowed value for expirationPolicy.ttl is 1 day.",
@@ -426,6 +438,10 @@
     {
       "name": "SubscriptionName",
       "description": "The subscription name in the format: projects/{project}/subscriptions/{subscription}"
+    },
+    {
+      "name": "PubSubMessages",
+      "description": "List of messages in JSON format when use 'Get messages' operation"
     }
   ],
   "minimumAgentVersion": "2.144.0",

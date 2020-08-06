@@ -4,6 +4,28 @@ import path from 'path';
 import assert from 'assert';
 import * as ttm from 'azure-pipelines-task-lib/mock-test';
 
+/**
+ * Auto-detect the best mechanism based in the criterias.
+ *
+ * @author Gabriel Anderson
+ * @param {boolean} largeVolume Large volume of messages
+ * @param {boolean} criticalThroughput Efficiency and throughput of message processing is critical
+ * @param {boolean} processMultipleTopics Multiple topics that must be processed by the same webhook
+ * @param {boolean} serverless App Engine Standard and Cloud Functions subscribers
+ * @param {('pull'|'push')} publicAccess Whether the resource can be accessed publicly (push)
+ * @param {('pull'|'push')} flowControl Flow control
+ * @returns {('pull'|'push')} Detected mechanism: `pull` or `push`
+ */
+function detectMechanism(
+  largeVolume, criticalThroughput, processMultipleTopics, serverless, publicAccess, flowControl,
+) {
+  const pull = [largeVolume, criticalThroughput, flowControl === 'pull'].filter((p) => p);
+  const push = [processMultipleTopics, serverless, flowControl === 'push'].filter((p) => p);
+  if (publicAccess === 'pull') return 'pull';
+  const result = push.length > pull.length ? 'push' : 'pull';
+  return result;
+}
+
 describe('Google Cloud PubSub Topics', function suite() {
   let created = false;
   this.timeout(60 * 1000);
@@ -73,6 +95,16 @@ describe('Google Cloud PubSub Topics', function suite() {
     assert.equal(tr.succeeded, true, 'should have succeeded');
     assert.equal(tr.errorIssues.length, 0, 'should have no errors');
 
+    done();
+  });
+
+  it('Test auto mechanism detection', (done) => {
+    const pull = detectMechanism(true, true, false, false, 'push', 'pull');
+    const push = detectMechanism(false, false, true, true, 'push', 'push');
+    const noPublicAccess = detectMechanism(false, false, true, true, 'pull', 'push');
+    assert.equal(pull, 'pull', 'Large volume of messages and critical throughput should be "pull".');
+    assert.equal(push, 'push', 'Multiple topics and serverless apps should be "push".');
+    assert.equal(noPublicAccess, 'pull', 'Resources without public access should use "pull" mechanism.');
     done();
   });
 });
