@@ -33,11 +33,18 @@ And put the credentials exported in JSON from a service account from your Google
 ![](images/sc.png)
 
 ## Recent updates
-* Cloud Functions:
+
+### v1.3
+
+- Cloud PubSub **[new]**
+
+### v1.2
+
+- Cloud Functions:
   - Fixed connection via secure file
   - Fixed create operation
   - Task size optimized
-* Cloud DNS **[new]**
+- Cloud DNS **[new]**
 
 ## Contributing
 
