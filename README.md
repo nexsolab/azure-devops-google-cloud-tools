@@ -10,13 +10,13 @@ Google Cloud Platform (GCP) tasks for Azure DevOps Pipelines
 Install gcloud CLI for use in all tasks or for custom commands.
 - **[Google Cloud Functions](Tasks/GoogleCloudFunctions)**  
 Deploy code to Cloud Functions or manage them: Create/Update, Delete or Call functions.
+- **[Google Cloud PubSub](Tasks/GoogleCloudPubSub)**  
+Manage PubSub topics, subscriptions and publish or get messages.
 - **[Manage DNS records](Tasks/GoogleCloudDNS)**  
 Add, remove or get the value of the record sets for managed zones.
-- **Deploy and manage App Service** (soon)
-- **Manage Service Endpoints** (soon)
-- **Manage PubSub Topics** (next)
-- **Manage PubSub Subscriptions** (soon)
-- **Manage Redis instances** (soon)
+- **Manage Redis instances** (next)
+- **Deploy and manage App Service and Service Endpoints** (soon)
+- **Google Cloud PubSub Lite** _(planning)_
 
 ## How to install extension
 Search for "Google Cloud" when adding a new task or go to theAzure DevOps Marketplace and install [**Google Cloud tools for Azure DevOps Pipelines** extension](https://marketplace.visualstudio.com/items?itemName=nexso.azure-devops-google-cloud-tools).

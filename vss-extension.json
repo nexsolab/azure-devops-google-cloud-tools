@@ -88,6 +88,15 @@
       "properties": {
         "name": "Tasks/GoogleCloudDNS"
       }
+    },
+    {
+      "id": "GoogleCloudPubSub",
+      "description": "Manage PubSub topics, subscriptions and publish or get messages",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+        "name": "Tasks/GoogleCloudPubSub"
+      }
     }
   ],
   "links": {
@@ -131,6 +140,9 @@
     },
     {
       "path": "Tasks/GoogleCloudDNS"
+    },
+    {
+      "path": "Tasks/GoogleCloudPubSub"
     }
   ]
 }
