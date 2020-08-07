@@ -7,6 +7,7 @@ import deepDiff from 'return-deep-diff';
 
 const apiUrl = 'https://pubsub.googleapis.com/v1';
 const isInTest = process.argv.join().includes('azure-pipelines-task-lib');
+if (isInTest) console.log('Testing...');
 
 // #region Utils
 /**
@@ -237,7 +238,7 @@ function getNumberInput(name, required = false) {
  */
 async function getTopic(client, project, name) {
   const url = `projects/${project}/topics/${name}`;
-  console.log(`Check existence of ${url}`);
+  console.log(`Check existence of ${url}...`);
 
   let res;
   try {
@@ -249,7 +250,7 @@ async function getTopic(client, project, name) {
       },
     });
   } catch (error) {
-    if (error.status === 404) return null;
+    if (error.code === 404) return null;
     console.error(JSON.stringify(error.response.data));
     throw error;
   }
@@ -273,7 +274,7 @@ async function createTopic(
   client, project, name, persistenceRegions = [], labels = {}, kmsKeyName = null,
 ) {
   const url = `projects/${project}/topics/${name}`;
-  console.log(`Creating topic ${url}`);
+  console.log(`Creating topic ${url}...`);
 
   const requestBody = {
     labels,
@@ -411,7 +412,7 @@ async function updateTopic(
  */
 async function deleteTopic(client, project, name) {
   const url = `projects/${project}/topics/${name}`;
-  console.log(`Deleting topic ${url}`);
+  console.log(`Deleting topic ${url}...`);
 
   let res;
   try {
@@ -500,7 +501,7 @@ So 'pull' should be used.`);
   }
 
   const result = push.length > pull.length ? 'push' : 'pull';
-  console.log(`The choised mechanism is '${result}'`);
+  console.log(`The chosen mechanism is '${result}'`);
   return result;
 }
 
@@ -543,8 +544,8 @@ function getCreateResquestBody(
     filter,
     enableMessageOrdering,
     retryPolicy: {
-      minimumBackoff: retryMinBackoff,
-      maximumBackoff: retryMaxBackoff,
+      minimumBackoff: `${retryMinBackoff}s`,
+      maximumBackoff: `${retryMaxBackoff}s`,
     },
     labels,
   };
@@ -691,12 +692,12 @@ async function getSubscription(client, project, subName) {
       },
     });
   } catch (error) {
-    const result = error.response.data;
-    console.error(JSON.stringify(result));
+    if (error.code === 404) return null;
+    console.error(JSON.stringify(error.response.data));
     throw error;
   }
 
-  return checkResultAndGetData(res);
+  return res && res.data;
 }
 
 /**
@@ -792,13 +793,12 @@ async function updateSubscription(
  * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project Full project identification
- * @param {string} name The PubSub topic name
  * @param {string} subName The PubSub subscription name
  * @returns {*} The API result data.
  */
-async function deleteSubscription(client, project, name, subName) {
+async function deleteSubscription(client, project, subName) {
   const url = `projects/${project}/subscriptions/${subName}`;
-  console.log(`Deleting subscription ${url} to the topic ${name}...`);
+  console.log(`Deleting subscription ${url}...`);
 
   let res;
   try {
@@ -821,14 +821,12 @@ async function deleteSubscription(client, project, name, subName) {
  * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project Full project identification
- * @param {string} name The PubSub topic name
  * @param {string} subName The PubSub subscription name
  * @returns {*} The API result data.
  */
-async function pauseSubscription(client, project, name, subName) {
+async function pauseSubscription(client, project, subName) {
   const url = `projects/${project}/subscriptions/${subName}`;
-  const topic = `projects/${project}/topics/${name}`;
-  console.log(`Pausing subscription ${subName} to the topic ${topic}...`);
+  console.log(`Pausing subscription ${subName}...`);
 
   let res;
   try {
@@ -856,15 +854,13 @@ async function pauseSubscription(client, project, name, subName) {
  * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project Full project identification
- * @param {string} name The PubSub topic name
  * @param {string} subName The PubSub subscription name
  * @param {number} maxMessages Maximum number of messages to retrieve
  * @returns {*} The API result data.
  */
-async function pullMessages(client, project, name, subName, maxMessages) {
+async function pullMessages(client, project, subName, maxMessages) {
   const url = `projects/${project}/subscriptions/${subName}`;
-  const topic = `projects/${project}/topics/${name}`;
-  console.log(`Pulling messages from topic ${topic}...`);
+  console.log(`Pulling messages using subscription ${url}...`);
 
   let res;
   try {
@@ -906,11 +902,11 @@ async function main() {
 
     // Check operation and get the name
     const op = taskLib.getInput('operation', false);
-    const name = taskLib.getInput('topicName', true);
 
     switch (op) {
       case 'create': {
-        const persistenceRegions = taskLib.getInput('recordType', false) || '';
+        const name = taskLib.getInput('topicName', true);
+        const persistenceRegions = taskLib.getInput('topicPersistenceRegions', false) || '';
         const kmsKeyName = taskLib.getInput('topicKmsKey', false) || '';
         const labels = taskLib.getInput('gcpLabels', false) || '';
 
@@ -934,23 +930,29 @@ async function main() {
         }
 
         taskSuccess = result && result.name;
+        if (taskSuccess) taskLib.setVariable('PubSubTopic', `projects/${auth.projectId}/topics/${name}`);
         break;
       }
 
       case 'delete': {
+        const name = taskLib.getInput('topicName', true);
         await deleteTopic(auth.client, auth.projectId, name);
         taskSuccess = true;
+        if (taskSuccess) taskLib.setVariable('PubSubTopic', `projects/${auth.projectId}/topics/${name}`);
         break;
       }
 
       case 'publish': {
+        const name = taskLib.getInput('topicName', true);
         const message = taskLib.getInput('messageData', true);
         const result = await publishMessage(auth.client, auth.projectId, name, message);
         taskSuccess = result.messageIds.length > 0;
+        taskLib.setVariable('PubSubTopic', `projects/${auth.projectId}/topics/${name}`);
         break;
       }
 
       case 'subscribe': {
+        const name = taskLib.getInput('topicName', true);
         const subName = taskLib.getInput('subName', true);
         const ackDeadlineSeconds = getNumberInput('subAckDeadlineSeconds', false) || 10;
         const vpcSC = taskLib.getBoolInput('subVpcSC', false) || false;
@@ -1052,7 +1054,7 @@ async function main() {
 
       case 'delsub': {
         const subName = taskLib.getInput('subName', true);
-        await deleteSubscription(auth.client, auth.projectId, name, subName);
+        await deleteSubscription(auth.client, auth.projectId, subName);
         taskSuccess = true;
         taskLib.setVariable('SubscriptionName', `projects/${auth.projectId}/subscriptions/${subName}`);
         break;
@@ -1060,9 +1062,8 @@ async function main() {
 
       case 'pause': {
         const subName = taskLib.getInput('subName', true);
-        await pauseSubscription(auth.client, auth.projectId, name, subName);
-        const topic = `projects/${auth.projectId}/topics/${name}`;
-        console.log(`Subscription ${subName} will no longer receive new messages published in the topic ${topic}`);
+        await pauseSubscription(auth.client, auth.projectId, subName);
+        console.log(`Subscription ${subName} will no longer receive new messages`);
         taskSuccess = true;
         taskLib.setVariable('SubscriptionName', `projects/${auth.projectId}/subscriptions/${subName}`);
         break;
@@ -1071,7 +1072,7 @@ async function main() {
       case 'pull': {
         const subName = taskLib.getInput('subName', true);
         const maxMessages = getNumberInput('subMaxMessages', false) || 0;
-        const result = await pullMessages(auth.client, auth.projectId, name, subName, maxMessages);
+        const result = await pullMessages(auth.client, auth.projectId, subName, maxMessages);
         taskSuccess = Array.isArray(result.receivedMessages);
 
         if (taskSuccess) {
@@ -1087,8 +1088,6 @@ async function main() {
       default:
         break;
     }
-
-    taskLib.setVariable('PubSubTopic', `projects/${auth.projectId}/topics/${name}`);
   } catch (error) {
     console.error(`Failed: ${error.message}`);
     taskLib.debug(error);

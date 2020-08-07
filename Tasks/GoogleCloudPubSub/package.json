@@ -4,7 +4,7 @@
   "description": "Create GCP PubSub topics and subscribe to them",
   "main": "main.js",
   "scripts": {
-    "test": "mocha ./src/main.test.js",
+    "test": "mocha ./**/main.test.js",
     "build": "npx babel src --out-dir dist --copy-files --ignore node_modules/**/*"
   },
   "repository": {

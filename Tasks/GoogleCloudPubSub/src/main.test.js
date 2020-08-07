@@ -26,14 +26,15 @@ function detectMechanism(
   return result;
 }
 
-describe('Google Cloud PubSub Topics', function suite() {
-  let created = false;
-  this.timeout(60 * 1000);
+describe('Google Cloud PubSub', function suite() {
+  let topicCreated = false;
+  let subscriptionCreated = false;
+  this.timeout(5 * 60 * 1000);
 
   it('Cloud PubSub - Create/Update topic test', (done) => {
-    this.timeout(80 * 1000);
+    this.timeout(60 * 1000);
 
-    const tp = path.join(__dirname, 'tests', 'topic-create.js');
+    const tp = path.join(__dirname, 'tests', 'create-topic.js');
     const tj = path.join(__dirname, 'task.json');
     const tr = new ttm.MockTestRunner(tp, tj);
     tr.run();
@@ -42,16 +43,34 @@ describe('Google Cloud PubSub Topics', function suite() {
     if (!tr.succeeded) console.log(tr.stderr);
     assert.equal(tr.succeeded, true, 'should have succeeded');
     assert.equal(tr.errorIssues.length, 0, 'should have no errors');
-    created = tr.succeeded;
+    topicCreated = tr.succeeded;
 
     setTimeout(done, 40 * 1000);
   });
 
-  it('Cloud PubSub - Publish message to test', (done) => {
+  it('Cloud PubSub - Subscribe to topic test subtest', (done) => {
     this.timeout(30 * 1000);
-    assert.equal(created, true, 'function may be created first');
+    assert.equal(topicCreated, true, 'topic may be created first');
 
-    const tp = path.join(__dirname, 'tests', 'update.js');
+    const tp = path.join(__dirname, 'tests', 'subscribe.js');
+    const tj = path.join(__dirname, 'task.json');
+    const tr = new ttm.MockTestRunner(tp, tj);
+    tr.run();
+
+    console.log(tr.stdout);
+    if (!tr.succeeded) console.log(tr.stderr);
+    assert.equal(tr.succeeded, true, 'should have succeeded');
+    assert.equal(tr.errorIssues.length, 0, 'should have no errors');
+    subscriptionCreated = tr.succeeded;
+
+    setTimeout(done, 20 * 1000);
+  });
+
+  it('Cloud PubSub - Pause push subscription  subtest', (done) => {
+    this.timeout(30 * 1000);
+    assert.equal(subscriptionCreated, true, 'subscription may be created first');
+
+    const tp = path.join(__dirname, 'tests', 'pause-subscription.js');
     const tj = path.join(__dirname, 'task.json');
     const tr = new ttm.MockTestRunner(tp, tj);
     tr.run();
@@ -61,14 +80,48 @@ describe('Google Cloud PubSub Topics', function suite() {
     assert.equal(tr.succeeded, true, 'should have succeeded');
     assert.equal(tr.errorIssues.length, 0, 'should have no errors');
 
-    setTimeout(done, 30 * 1000);
+    done();
   });
 
-  it('Cloud PubSub - ', (done) => {
+  it('Cloud PubSub - Publish message to test', (done) => {
     this.timeout(30 * 1000);
-    assert.equal(created, true, 'function may be created first');
+    assert.equal(topicCreated, true, 'topic may be created first');
 
-    const tp = path.join(__dirname, 'tests', 'call.js');
+    const tp = path.join(__dirname, 'tests', 'publish-message.js');
+    const tj = path.join(__dirname, 'task.json');
+    const tr = new ttm.MockTestRunner(tp, tj);
+    tr.run();
+
+    console.log(tr.stdout);
+    if (!tr.succeeded) console.log(tr.stderr);
+    assert.equal(tr.succeeded, true, 'should have succeeded');
+    assert.equal(tr.errorIssues.length, 0, 'should have no errors');
+
+    setTimeout(done, 5 * 1000);
+  });
+
+  it('Cloud PubSub - Get messages from subscription  subtest', (done) => {
+    this.timeout(30 * 1000);
+    assert.equal(subscriptionCreated, true, 'subscription may be created first');
+
+    const tp = path.join(__dirname, 'tests', 'get-messages.js');
+    const tj = path.join(__dirname, 'task.json');
+    const tr = new ttm.MockTestRunner(tp, tj);
+    tr.run();
+
+    console.log(tr.stdout);
+    if (!tr.succeeded) console.log(tr.stderr);
+    assert.equal(tr.succeeded, true, 'should have succeeded');
+    assert.equal(tr.errorIssues.length, 0, 'should have no errors');
+
+    done();
+  });
+
+  it('Cloud PubSub - Delete subscription  subtest', (done) => {
+    this.timeout(30 * 1000);
+    assert.equal(subscriptionCreated, true, 'subscription may be created first');
+
+    const tp = path.join(__dirname, 'tests', 'delete-subscription.js');
     const tj = path.join(__dirname, 'task.json');
     const tr = new ttm.MockTestRunner(tp, tj);
     tr.run();
@@ -83,9 +136,9 @@ describe('Google Cloud PubSub Topics', function suite() {
 
   it('Cloud PubSub - Delete topic test', (done) => {
     this.timeout(30 * 1000);
-    assert.equal(created, true, 'function may be created first');
+    assert.equal(topicCreated && subscriptionCreated, true, 'topic and subscription may be created first');
 
-    const tp = path.join(__dirname, 'tests', 'delete.js');
+    const tp = path.join(__dirname, 'tests', 'delete-topic.js');
     const tj = path.join(__dirname, 'task.json');
     const tr = new ttm.MockTestRunner(tp, tj);
     tr.run();
@@ -98,7 +151,7 @@ describe('Google Cloud PubSub Topics', function suite() {
     done();
   });
 
-  it('Test auto mechanism detection', (done) => {
+  it('--Test auto mechanism detection', (done) => {
     const pull = detectMechanism(true, true, false, false, 'push', 'pull');
     const push = detectMechanism(false, false, true, true, 'push', 'push');
     const noPublicAccess = detectMechanism(false, false, true, true, 'pull', 'push');
