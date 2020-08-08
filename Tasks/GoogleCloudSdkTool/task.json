@@ -28,7 +28,7 @@
       "name": "versionSpec",
       "type": "string",
       "label": "Version Spec",
-      "defaultValue": "283.x",
+      "defaultValue": "304.x",
       "required": true,
       "helpMarkDown": "Version Spec of version to get.  Examples: 252.x, 143.0.1, >=280.0.0"
     },

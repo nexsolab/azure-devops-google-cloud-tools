@@ -2,10 +2,10 @@
   "manifestVersion": 1,
   "id": "azure-devops-google-cloud-tools",
   "publisher": "nexso",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "name": "Google Cloud tools for Azure DevOps Pipelines",
   "scopes": ["vso.build", "vso.build_execute", "vso.release"],
-  "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy do App Services",
+  "description": "Google Cloud tasks like CLI, Deploy Apps, Functions, manage DNS records, PubSub and Redis instances.",
   "public": false,
   "categories": ["Azure Pipelines"],
   "icons": {
@@ -88,6 +88,15 @@
       "properties": {
         "name": "Tasks/GoogleCloudDNS"
       }
+    },
+    {
+      "id": "GoogleCloudPubSub",
+      "description": "Manage PubSub topics, subscriptions and publish or get messages",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+        "name": "Tasks/GoogleCloudPubSub"
+      }
     }
   ],
   "links": {
@@ -131,6 +140,9 @@
     },
     {
       "path": "Tasks/GoogleCloudDNS"
+    },
+    {
+      "path": "Tasks/GoogleCloudPubSub"
     }
   ]
 }
