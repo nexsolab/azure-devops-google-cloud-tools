@@ -12,7 +12,7 @@ tmr.setAnswers({
   },
 });
 
-const endpointUrl = 'https://us-east1-categorias.cloudfunctions.net/categorias';
+const endpointUrl = 'https://example.com';
 
 tmr.setInput('authenticationMethod', 'serviceAccount');
 tmr.setInput('SCserviceAccount', 'test-runner');

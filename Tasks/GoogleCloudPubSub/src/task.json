@@ -27,7 +27,7 @@
       "name": "PushConfig",
       "displayName": "Push Config",
       "isExpanded": true,
-      "visibleRule": "operation = subscribe && (subMode = auto || subMode = push)" 
+      "visibleRule": "operation = subscribe && subMechanism != pull" 
     },
     {
       "name": "RetainPolicy",

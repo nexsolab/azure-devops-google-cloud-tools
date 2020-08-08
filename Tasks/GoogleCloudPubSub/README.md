@@ -30,7 +30,7 @@ All operations export `PubSubTopic` output variable as the full resource name of
 - **Create subscription**  
   Listen to new messages in a topic.
 - **Delete subscription**  
-  You don't receive any new messages published to the topic.
+  You will not receive any new messages published to the topic.
 - **Pause a push subscription**  
   Pause a push subscription, so new messages on the topic will not trigger endpoint.  
   For resume, you should use _Create subscription_ task to set push config again.
@@ -67,6 +67,6 @@ The account informed in Service Connection or JSON key requires the following Go
 Or you can use the role:  
 `roles/pubsub.editor`
 
-### Deploy
+## Screenshots
 
 ![](screenshots/deploy.png)
