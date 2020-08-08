@@ -14,7 +14,7 @@ tmr.setAnswers({
 
 tmr.setInput('authenticationMethod', 'serviceAccount');
 tmr.setInput('SCserviceAccount', 'test-runner');
-tmr.setInput('operation', 'delsub');
+tmr.setInput('operation', 'unsubscribe');
 tmr.setInput('subName', 'subtest');
 
 tmr.run();

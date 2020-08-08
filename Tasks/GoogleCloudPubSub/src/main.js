@@ -1052,7 +1052,7 @@ async function main() {
         break;
       }
 
-      case 'delsub': {
+      case 'unsubscribe': {
         const subName = taskLib.getInput('subName', true);
         await deleteSubscription(auth.client, auth.projectId, subName);
         taskSuccess = true;

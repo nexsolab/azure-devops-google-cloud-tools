@@ -30,6 +30,12 @@
       "visibleRule": "operation = subscribe && subMechanism != pull" 
     },
     {
+      "name": "MechanismAutoQuestions",
+      "displayName": "Wizard: \"pull\" or \"push\"?",
+      "isExpanded": true,
+      "visibleRule": "operation = subscribe && subMechanism = auto" 
+    },
+    {
       "name": "RetainPolicy",
       "displayName": "Retain Policy",
       "isExpanded": true,
@@ -94,7 +100,7 @@
         "delete": "Delete topic",
         "publish": "Publish message to",
         "subscribe": "Subscribe to topic",
-        "delsub": "Delete subscription",
+        "unsubscribe": "Delete subscription",
         "pause": "Pause push subscription",
         "pull": "Get messages from subscription"
       }
@@ -106,7 +112,7 @@
       "defaultValue": "",
       "required": true,
       "helpMarkDown": "[See the resource name rules.](https://cloud.google.com/pubsub/docs/admin#resource_names)",
-      "visibleRule": "operation != delsub && operation != pause && operation != pull"
+      "visibleRule": "operation != unsubscribe && operation != pause && operation != pull"
     },
     {
       "name": "topicKmsKey",
@@ -114,7 +120,7 @@
       "label": "KMS Key name",
       "defaultValue": "",
       "required": false,
-      "helpMarkDown": "The resource name of the Cloud KMS CryptoKey to be used to protect access to messages published on this topic.<br>The expected format is projects/*/locations/*/keyRings/*/cryptoKeys/*.",
+      "helpMarkDown": "The resource name of the Cloud KMS CryptoKey to be used to protect access to messages published on this topic.<br>The expected format is projects/{project}/locations/{location}/keyRings/{keyRing}/cryptoKeys/{cryptoKey}.",
       "visibleRule": "operation = create"
     },
     {
@@ -128,7 +134,7 @@
     },
     {
       "name": "messageData",
-      "type": "string",
+      "type": "multiLine",
       "label": "Message to be queued to the topic",
       "defaultValue": "",
       "required": true,
@@ -164,16 +170,17 @@
       "label": "Subscription name",
       "defaultValue": "",
       "required": true,
-      "visibleRule": "operation = subscribe || operation = delsub || operation = pause || operation = pull",
+      "visibleRule": "operation = subscribe || operation = unsubscribe || operation = pause || operation = pull",
       "helpMarkDown": "[Resource name rules](https://cloud.google.com/pubsub/docs/admin#resource_names)"
     },
     {
       "name": "subAckDeadlineSeconds",
       "type": "string",
-      "label": "Seconds to wait for the subscriber to acknowledge (10 - 600) [Learn more](https://cloud.google.com/pubsub/docs/reference/rest/v1/projects.subscriptions#resource:-subscription)",
+      "label": "Seconds to wait for the subscriber to acknowledge (10 - 600)",
       "defaultValue": "10",
       "required": false,
-      "visibleRule": "operation = subscribe"
+      "visibleRule": "operation = subscribe",
+      "helpMarkDown": "[Learn more](https://cloud.google.com/pubsub/docs/reference/rest/v1/projects.subscriptions#resource:-subscription)"
     },
     {
       "name": "subMessageOrdering",
@@ -288,7 +295,7 @@
       "defaultValue": true,
       "required": true,
       "groupName": "PushConfig",
-      "helpMarkDown": "A URL locating the endpoint to which messages should be pushed. For example, a Webhook endpoint might use **https://example.com/push.**"
+      "helpMarkDown": "If specified, Pub/Sub will generate and attach an OIDC JWT token as an Authorization header in the HTTP request for every pushed message."
     },
     {
       "name": "subPushServiceAccountEmail",
@@ -343,8 +350,8 @@
     },
     {
       "name": "subMessageRetentionDurationUnit",
-      "type": "pickList",
-      "label": "Message Retention Duration Time Unit (10m-7d)",
+      "type": "radio",
+      "label": "",
       "defaultValue": "d",
       "required": true,
       "groupName": "RetainPolicy",
