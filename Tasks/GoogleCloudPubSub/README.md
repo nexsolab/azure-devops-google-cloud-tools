@@ -69,4 +69,34 @@ Or you can use the role:
 
 ## Screenshots
 
-![](screenshots/deploy.png)
+### Topics
+
+#### Create
+
+![](screenshots/create.png)
+
+#### Delete
+
+![](screenshots/delete.png)
+
+#### Publish message
+
+![](screenshots/publish.png)
+
+### Subscriptions
+
+#### Create/Update subscription
+
+![](screenshots/subscribe.png)
+
+#### Pause a pull subscription
+
+![](screenshots/pause.png)
+
+#### Get messages from topic
+
+![](screenshots/pull.png)
+
+#### Delete the subscription
+
+![](screenshots/unsubscribe.png)
