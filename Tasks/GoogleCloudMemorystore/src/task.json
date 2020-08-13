@@ -219,7 +219,7 @@
         "REDIS_4_0": "4.0",
         "REDIS_5_0": "5.0"
       },
-      "visibleRule": "operation = create",
+      "visibleRule": "operation = create || operation = upgrade",
       "groupName": "RedisConfig"
     },
     {
@@ -301,6 +301,27 @@
       "visibleRule": "operation = create && redisVersion = REDIS_5_0",
       "helpMarkDown": "`stream-node-max-entries`: Using this configuration it is possible to configure the maximum number of items it may contain before switching to a new node when appending new stream entries.",
       "groupName": "RedisConfig"
+    },
+    {
+      "name": "instanceDataProtectionMode",
+      "type": "radio",
+      "label": "Data Protection mode",
+      "defaultValue": "LIMITED_DATA_LOSS",
+      "required": false,
+      "options": {
+        "LIMITED_DATA_LOSS": "Protected with data loss control",
+        "FORCE_DATA_LOSS": "Without data loss control (force data loss)"
+      },
+      "visibleRule": "operation = failover",
+      "helpMarkDown": "Initiates a failover of the master node to current replica node for a specific **STANDARD** tier Cloud Memorystore for Redis instance."
+    },
+    {
+      "name": "waitOperation",
+      "type": "boolean",
+      "label": "Wait for long running operation",
+      "defaultValue": false,
+      "required": false,
+      "helpMarkDown": "If enabled, pipeline will wait until resource be modified, instead of just scheduling an operation."
     }
   ],
   "OutputVariables": [
@@ -314,7 +335,7 @@
     },
     {
       "name": "RedisCurrentLocation",
-      "description": "The current zone where the Redis endpoint is placed. For Basic Tier instances, this will always be the same as the locationId provided by the user at creation time. For Standard Tier instances, this can be either locationId or alternativeLocationId and can change after a failover event."
+      "description": "The current zone where the Redis endpoint is placed."
     }
   ],
   "minimumAgentVersion": "2.144.0",

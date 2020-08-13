@@ -224,6 +224,143 @@ function getNumberInput(name, required = false) {
     return undefined;
   }
 }
+
+/**
+ * @typedef {object} OperationMetadata
+ * @property {string} createTime The time the operation was created.
+ * @property {string} endTime The time the operation finished running.
+ * @property {string} target Server-defined resource path for the target of the operation.
+ * @property {string} verb Name of the verb executed by the operation.
+ * @property {string} statusDetail Human-readable status of the operation, if any.
+ * @property {string} cancelRequested Whether the user has requested cancellation of the operation.
+ * @property {string} apiVersion API version used to start the operation
+ */
+
+/**
+ * @typedef {object} Operation
+ * @property {string} name The server-assigned name
+ * @property {OperationMetadata} metadata Informations about operation
+ * @property {boolean} done `false` means the operation is still in progress, otherwise is completed
+ * @property {object} error The error result of the operation in case of failure or cancellation
+ * @property {object} response The normal response of the operation in case of success.
+ */
+
+/**
+ * Get the current status of long running operation.
+ *
+ * @author Gabriel Anderson
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {string} region The GCP region ID
+ * @param {string} operation The operation ID
+ * @returns {Operation} The API result data
+ */
+async function getOperation(client, project, region, operation) {
+  const url = `projects/${project}/locations/${region}/operations/${operation}`;
+  console.log('Check operation status...');
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'GET',
+      url: `${apiUrl}/${url}`,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  return res && res.data;
+}
+
+let tries = 0;
+let errors = 0;
+let exponent = 1;
+
+/**
+ * Check if the operation ends.
+ *
+ * @author Gabriel Anderson
+ * @param {Function} resolve Resolve function
+ * @param {Function} reject Reject function
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {string} region The GCP region ID
+ * @param {Operation} operationBody The operation name
+ */
+async function checkOperation(resolve, reject, client, project, region, operationBody) {
+  /**
+   * @type {Operation}
+   */
+  let result;
+  const operation = operationBody.name;
+
+  if (operationBody.done) {
+    // Already finished operation
+    result = operationBody;
+  } else {
+    // Check the status of operation
+    try {
+      result = await getOperation(client, project, region, operation);
+      tries += 1;
+    } catch (error) {
+      // just update tries and errors count
+      tries += 1;
+      errors += 1;
+    }
+  }
+
+  // Too many errors
+  if (errors >= 3) {
+    reject('Too many errors.');
+    return;
+  }
+
+  // Too many errors
+  if (tries > 15) {
+    reject('Too many attempts.');
+    return;
+  }
+
+  if (result.done) {
+    console.log('Provisioning finished!');
+    if (typeof result.response === 'object') {
+      resolve(result.response);
+    } else {
+      reject(result.error);
+    }
+  } else {
+    exponent += 1;
+    if (exponent > 5) exponent = 1;
+
+    const seconds = 2 ** exponent;
+    const detail = result.metadata && result.metadata.statusDetail;
+    console.log(`Status is ${detail}. Trying again in ${seconds} seconds.`);
+
+    setTimeout(async () => {
+      await checkOperation(resolve, reject, client, project, region, operationBody);
+    }, seconds * 1000);
+  }
+}
+
+/**
+ * Wait until long running operation finishes.
+ *
+ * @author Gabriel Anderson
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {string} region The GCP region ID
+ * @param {Operation} operationBody The operation body received from a operation
+ * @returns {*} The API result data
+ */
+async function waitOperation(client, project, region, operationBody) {
+  return new Promise((resolve, reject) => {
+    checkOperation(resolve, reject, client, project, region, operationBody).catch(reject);
+  });
+}
 // #endregion Utils
 
 // #region Operations
@@ -232,12 +369,13 @@ function getNumberInput(name, required = false) {
  *
  * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
- * @param {string} project The GCP project where managed zone is
- * @param {string} name The PubSub topic name
+ * @param {string} project The GCP Project ID
+ * @param {string} region The GCP region ID
+ * @param {string} name The name of the Redis intance
  * @returns {*} The API result data
  */
-async function getTopic(client, project, name) {
-  const url = `projects/${project}/topics/${name}`;
+async function getInstance(client, project, region, name) {
+  const url = `projects/${project}/locations/${region}/instances/${name}`;
   console.log(`Check existence of ${url}...`);
 
   let res;
@@ -255,40 +393,144 @@ async function getTopic(client, project, name) {
     throw error;
   }
 
-  return checkResultAndGetData(res);
+  return res && res.data;
 }
 
 /**
- * Create a new PubSub topic
+ * Create a new instance of Redis service (Cloud Memorystore)
  *
  * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
- * @param {string} project The GCP project where managed zone is
- * @param {string} name The PubSub topic name
- * @param {string[]} [persistenceRegions=[]] A list of regions where messages may be persisted
- * @param {object} [labels={}] A list of resource labels
- * @param {string} [kmsKeyName=null] CryptoKey to be used to protect access to messages published
+ * @param {string} project The GCP Project ID
+ * @param {string} region The GCP region ID
+ * @param {string} name The name of the Redis intance
+ * @param {string} displayName Friendly name of the resource
+ * @param {string} tier The service tier
+ * @param {number} memorySize Redis memory size in GiB
+ * @param {string} network Authorized network
+ * @param {string} connectMode Connection mode
+ * @param {string} zone Instance zone
+ * @param {string} alternativeZone Alternative zone (in case of failures)
+ * @param {string} ipRange Reserved IP Range
+ * @param {string} version Redis version
+ * @param {object} redisConfigs Redis configuration
+ * @param {object[]} labels GCP resource labels
  * @returns {*} The API result data
  */
 async function createInstance(
-  client, project, name, persistenceRegions = [], labels = {}, kmsKeyName = null,
+  client, project, region, name, displayName, tier, memorySize, network,
+  connectMode, zone, alternativeZone, ipRange, version, redisConfigs, labels,
 ) {
-  const url = `projects/${project}/topics/${name}`;
-  console.log(`Creating topic ${url}...`);
+  const url = `projects/${project}/locations/${region}/instances`;
+  console.log(`Creating Redis ${url}/${name}...`);
 
   const requestBody = {
+    tier,
+    name: `${url}/${name}`,
+    authorizedNetwork: network,
+    connectMode,
+    displayName,
     labels,
-    kmsKeyName,
-    messageStoragePolicy: {
-      allowedPersistenceRegions: persistenceRegions,
-    },
+    locationId: zone,
+    alternativeLocationId: alternativeZone,
+    memorySizeGb: memorySize,
+    redisConfigs,
+    redisVersion: version,
+    reservedIpRange: ipRange,
   };
 
   let res;
   try {
     res = await client.request({
-      method: 'PUT',
-      url: `${apiUrl}/${url}`,
+      method: 'POST',
+      url: `${apiUrl}/${url}?instanceId=${name}`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  } catch (error) {
+    const result = error.response.data;
+    console.error(JSON.stringify(result));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+
+/**
+ * Update the existing instance of Redis service (Cloud Memorystore)
+ *
+ * @author Gabriel Anderson
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {string} region The GCP region ID
+ * @param {string} name The name of the Redis intance
+ * @param {string} displayName Friendly name of the resource
+ * @param {string} tier The service tier
+ * @param {number} memorySize Redis memory size in GiB
+ * @param {string} network Authorized network
+ * @param {string} connectMode Connection mode
+ * @param {string} zone Instance zone
+ * @param {string} alternativeZone Alternative zone (in case of failures)
+ * @param {string} ipRange Reserved IP Range
+ * @param {string} version Redis version
+ * @param {object} redisConfigs Redis configuration
+ * @param {object[]} labels GCP resource labels
+ * @param {object} currentInstance The current instance metadata
+ * @returns {*} The API result data
+ */
+async function updateInstance(
+  client, project, region, name, displayName, tier, memorySize, network,
+  connectMode, zone, alternativeZone, ipRange, version, redisConfigs, labels,
+  currentInstance,
+) {
+  const url = `projects/${project}/locations/${region}/instances/${name}`;
+  console.log(`Updating Redis ${url}`);
+
+  // New
+  const requestBody = {
+    tier,
+    name: `${url}/${name}`,
+    authorizedNetwork: network,
+    connectMode,
+    displayName,
+    labels,
+    locationId: zone,
+    alternativeLocationId: alternativeZone,
+    memorySizeGb: memorySize,
+    redisConfigs,
+    redisVersion: version,
+    reservedIpRange: ipRange,
+  };
+
+  // Get only the differences, including new props
+  const diff = deepDiff(currentInstance, requestBody, true);
+  taskLib.debug(`Changed or new properties of the existing instance are: ${propertiesToArray(diff).join(',')}`);
+  taskLib.debug(JSON.stringify(diff));
+
+  // Nothing changed
+  if (!diff) {
+    console.log('Nothing was changed in the instance.');
+    return checkResultAndGetData({
+      status: 200,
+      data: requestBody,
+    });
+  }
+
+  // Get only changed props
+  const changedProps = deepDiff(currentInstance, requestBody) || {};
+  const updateMask = propertiesToArray(changedProps).join(',');
+  const qsMask = encodeURIComponent(updateMask);
+  taskLib.debug(`Changed attributes are: ${updateMask}`);
+
+  // Update
+  let res;
+  try {
+    res = await client.request({
+      method: 'PATCH',
+      url: `${apiUrl}/${url}?updateMask=${qsMask}`,
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -300,7 +542,7 @@ async function createInstance(
 
     // Already exists, just show a warning
     if (result.error && result.error.code === 409) {
-      console.log(`[!] The topic ${url} already exists.`);
+      console.log(`[!] The instance ${url} already exists.`);
       return {
         data: {
           ...requestBody,
@@ -318,101 +560,18 @@ async function createInstance(
 }
 
 /**
- * Update existing PubSub topic
+ * Delete the instance.
  *
  * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
- * @param {string} project The GCP project where managed zone is
- * @param {string} name The PubSub topic name
- * @param {Object} currentProperties The current properties to compare with the changed values
- * @param {string[]} [persistenceRegions=[]] A list of regions where messages may be persisted
- * @param {object} [labels={}] A list of resource labels
- * @param {string} [kmsKeyName=null] The CryptoKey to protect access to messages published
+ * @param {string} project The GCP Project ID
+ * @param {string} region The GCP region ID
+ * @param {string} name The name of the Redis intance
  * @returns {*} The API result data
  */
-async function updateTopic(
-  client, project, name, currentProperties, persistenceRegions = [], labels = {}, kmsKeyName = null,
-) {
-  const url = `projects/${project}/topics/${name}`;
-  console.log(`Updating topic ${url}`);
-
-  // New
-  const requestBody = {
-    labels,
-    kmsKeyName,
-    messageStoragePolicy: {
-      allowedPersistenceRegions: persistenceRegions,
-    },
-  };
-
-  // Get only the differences, including new props
-  const diff = deepDiff(currentProperties, requestBody, true);
-  taskLib.debug(`Changed or new properties of the existing function are: ${propertiesToArray(diff).join(',')}`);
-  taskLib.debug(JSON.stringify(diff));
-
-  // Nothing changed
-  if (!diff) {
-    console.log('Nothing was changed in the function.');
-    return checkResultAndGetData({
-      status: 200,
-      data: requestBody,
-    });
-  }
-
-  // Get only changed props
-  const changedProps = deepDiff(currentProperties, requestBody) || {};
-  const updateMask = propertiesToArray(changedProps).join(',');
-  taskLib.debug(`Changed attributes are: ${updateMask}`);
-
-  // Update
-  let res;
-  try {
-    res = await client.request({
-      method: 'PATCH',
-      url: `${apiUrl}/${url}`,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        topic: requestBody,
-        updateMask,
-      }),
-    });
-  } catch (error) {
-    const result = error.response.data;
-
-    // Already exists, just show a warning
-    if (result.error && result.error.code === 409) {
-      console.log(`[!] The topic ${url} already exists.`);
-      return {
-        data: {
-          ...requestBody,
-          name: url,
-        },
-        id: 1,
-      };
-    }
-
-    console.error(JSON.stringify(result));
-    throw error;
-  }
-
-  return checkResultAndGetData(res);
-}
-
-/**
- * Delete the topic.
- *
- * @author Gabriel Anderson
- * @param {OAuth2Client} client Google Auth Client
- * @param {string} project The GCP project where managed zone is
- * @param {string} name The PubSub topic name
- * @returns {*} The API result data
- */
-async function deleteTopic(client, project, name) {
-  const url = `projects/${project}/topics/${name}`;
-  console.log(`Deleting topic ${url}...`);
+async function deleteInstance(client, project, region, name) {
+  const url = `projects/${project}/locations/${region}/instances/${name}`;
+  console.log(`Deleting Redis ${url}...`);
 
   let res;
   try {
@@ -432,32 +591,67 @@ async function deleteTopic(client, project, name) {
 }
 
 /**
- * Publish message to the topic.
+ * Initiates a failover of the master node to current replica node for a specific STANDARD tier.
  *
  * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
- * @param {string} project The GCP project where managed zone is
- * @param {string} name The PubSub topic name
- * @param {string} message The message data
- * @param {object} attributes Key-value of attributes for this message
+ * @param {string} project The GCP Project ID
+ * @param {string} region The GCP region ID
+ * @param {string} name The name of the Redis intance
+ * @param {('LIMITED_DATA_LOSS'|'FORCE_DATA_LOSS'))} mode Available data protection mode
  * @returns {*} The API result data
  */
-async function publishMessage(client, project, name, message, attributes) {
-  const url = `projects/${project}/topics/${name}`;
-  console.log(`Publishing message to the topic ${url}`);
+async function failover(client, project, region, name, mode) {
+  const url = `projects/${project}/locations/${region}/instances/${name}`;
+  console.log(`Failover the ${url} to ${mode}...`);
 
   const requestBody = {
-    messages: [{
-      data: Buffer.from(message).toString('base64'),
-      attributes,
-    }],
+    dataProtectionMode: mode,
   };
 
   let res;
   try {
     res = await client.request({
       method: 'POST',
-      url: `${apiUrl}/${url}:publish`,
+      url: `${apiUrl}/${url}:failover`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+
+/**
+ * Initiates a failover of the master node to current replica node for a specific STANDARD tier.
+ *
+ * @author Gabriel Anderson
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {string} region The GCP region ID
+ * @param {string} name The name of the Redis intance
+ * @param {string} version Specifies the target version of Redis software to upgrade to
+ * @returns {*} The API result data
+ */
+async function upgrade(client, project, region, name, version) {
+  const url = `projects/${project}/locations/${region}/instances/${name}`;
+  console.log(`Upgrade ${url} to version ${version}...`);
+
+  const requestBody = {
+    redisVersion: version,
+  };
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'POST',
+      url: `${apiUrl}/${url}:upgrade`,
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -481,6 +675,11 @@ async function main() {
   let taskSuccess = false;
 
   try {
+    /**
+     * @type {Operation}
+     */
+    let result;
+
     // Get authentication
     const auth = await getAuthenticatedClient([]);
 
@@ -517,61 +716,60 @@ async function main() {
         const arrLabels = parseListInput(labels);
 
         // Check if the function already exists
-        let result;
-        const instance = await getInstance(auth.client, auth.projectId, name);
+        const instance = await getInstance(auth.client, auth.projectId, region, name);
 
         if (instance) {
           console.log('Function already exists.');
-          result = await updateTopic(
-            auth.client, auth.projectId, name, arrRegions, arrLabels, kmsKeyName, instance,
+          result = await updateInstance(
+            auth.client, auth.projectId, region, name, displayName,
+            tier, memorySize, network, connectMode, zone, alternativeZone,
+            ipRange, version, redisConfig, arrLabels, instance,
           );
         } else {
           result = await createInstance(
-            auth.client, auth.projectId, region, name, 
+            auth.client, auth.projectId, region, name, displayName,
+            tier, memorySize, network, connectMode, zone, alternativeZone,
+            ipRange, version, redisConfig, arrLabels,
           );
         }
-
-        taskSuccess = result && result.name;
-        if (taskSuccess) taskLib.setVariable('PubSubTopic', `projects/${auth.projectId}/topics/${name}`);
         break;
       }
 
       case 'delete': {
-        const name = taskLib.getInput('topicName', true);
-        await deleteTopic(auth.client, auth.projectId, name);
-        taskSuccess = true;
-        if (taskSuccess) taskLib.setVariable('PubSubTopic', `projects/${auth.projectId}/topics/${name}`);
+        result = await deleteInstance(auth.client, auth.projectId, region, name);
         break;
       }
 
-      case 'publish': {
-        const name = taskLib.getInput('topicName', true);
-        const message = taskLib.getInput('messageData', true);
-        const result = await publishMessage(auth.client, auth.projectId, name, message);
-        taskSuccess = result.messageIds.length > 0;
-        taskLib.setVariable('PubSubTopic', `projects/${auth.projectId}/topics/${name}`);
+      case 'failover': {
+        const mode = taskLib.getInput('instanceDataProtectionMode', true);
+        result = await failover(auth.client, auth.projectId, region, name, mode);
         break;
       }
 
-      case 'unsubscribe': {
-        const subName = taskLib.getInput('subName', true);
-        await deleteSubscription(auth.client, auth.projectId, subName);
-        taskSuccess = true;
-        taskLib.setVariable('SubscriptionName', `projects/${auth.projectId}/subscriptions/${subName}`);
-        break;
-      }
-
-      case 'pause': {
-        const subName = taskLib.getInput('subName', true);
-        await pauseSubscription(auth.client, auth.projectId, subName);
-        console.log(`Subscription ${subName} will no longer receive new messages`);
-        taskSuccess = true;
-        taskLib.setVariable('SubscriptionName', `projects/${auth.projectId}/subscriptions/${subName}`);
+      case 'upgrade': {
+        const version = taskLib.getInput('redisVersion', true);
+        result = await upgrade(auth.client, auth.projectId, region, name, version);
         break;
       }
 
       default:
         break;
+    }
+
+    // Check if we should wait for operation ends
+    const shouldWait = taskLib.getBoolInput('waitOperation', false) || false;
+
+    if (shouldWait) {
+      const finalResult = await waitOperation(auth.client, auth.projectId, region, result);
+      taskSuccess = true;
+
+      if (typeof finalResult.port === 'number' && typeof finalResult.host === 'string') {
+        taskLib.setVariable('RedisHost', finalResult.host);
+        taskLib.setVariable('RedisPort', finalResult.port);
+        taskLib.setVariable('RedisCurrentLocation', finalResult.currentLocationId);
+      }
+    } else {
+      taskSuccess = result && result.metadata && result.metadata.createTime;
     }
   } catch (error) {
     console.error(`Failed: ${error.message}`);

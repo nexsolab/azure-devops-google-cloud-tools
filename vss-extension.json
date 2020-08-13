@@ -97,6 +97,15 @@
       "properties": {
         "name": "Tasks/GoogleCloudPubSub"
       }
+    },
+    {
+      "id": "GoogleCloudMemorystore",
+      "description": "Manage Redis instances",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+        "name": "Tasks/GoogleCloudMemorystore"
+      }
     }
   ],
   "links": {
@@ -143,6 +152,9 @@
     },
     {
       "path": "Tasks/GoogleCloudPubSub"
+    },
+    {
+      "path": "Tasks/GoogleCloudMemorystore"
     }
   ]
 }
