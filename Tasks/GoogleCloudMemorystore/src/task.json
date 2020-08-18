@@ -259,7 +259,7 @@
       "defaultValue": false,
       "required": false,
       "helpMarkDown": "`activedefrag`: Active (online) defragmentation allows a Redis server to compact the spaces left between small allocations and deallocations of data in memory, thus allowing to reclaim back memory.",
-      "visibleRule": "operation = create && redisVersion != REDIS_3_2",
+      "visibleRule": "operation = create && redisVersion != 'REDIS_3_2'",
       "groupName": "RedisConfig"
     },
     {
@@ -268,7 +268,7 @@
       "label": "LFU: Decay time (in minutes)",
       "defaultValue": "1",
       "required": false,
-      "visibleRule": "operation = create && redisVersion != REDIS_3_2",
+      "visibleRule": "operation = create && redisVersion != 'REDIS_3_2'",
       "helpMarkDown": "`lfu-decay-time`: The time that must elapse in order for the key counter to be divided by two (or decremented if it has a value less <= 10)<br>The default value for the lfu-decay-time is 1. A Special value of 0 means to decay the counter every time it happens to be scanned.",
       "groupName": "RedisConfig"
     },
@@ -278,7 +278,7 @@
       "label": "LFU: Log Factor (in minutes)",
       "defaultValue": "10",
       "required": false,
-      "visibleRule": "operation = create && redisVersion != REDIS_3_2",
+      "visibleRule": "operation = create && redisVersion != 'REDIS_3_2'",
       "helpMarkDown": "`lfu-log-factor`: The LFU counter is just 8 bits per key, it's maximum value is 255, so Redis uses a probabilistic increment with logarithmic behavior. Given the value of the old counter, when a key is accessed.",
       "groupName": "RedisConfig"
     },
@@ -288,7 +288,7 @@
       "label": "Stream node: Max. bytes",
       "defaultValue": "4096",
       "required": false,
-      "visibleRule": "operation = create && redisVersion = REDIS_5_0",
+      "visibleRule": "operation = create && redisVersion = 'REDIS_5_0'",
       "helpMarkDown": "`stream-node-max-bytes`: Using this configuration it is possible to configure how big a single node can be in bytes.",
       "groupName": "RedisConfig"
     },
@@ -298,7 +298,7 @@
       "label": "Stream node: Max. entries",
       "defaultValue": "100",
       "required": false,
-      "visibleRule": "operation = create && redisVersion = REDIS_5_0",
+      "visibleRule": "operation = create && redisVersion = 'REDIS_5_0'",
       "helpMarkDown": "`stream-node-max-entries`: Using this configuration it is possible to configure the maximum number of items it may contain before switching to a new node when appending new stream entries.",
       "groupName": "RedisConfig"
     },
