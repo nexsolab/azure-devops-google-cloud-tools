@@ -196,7 +196,7 @@
       "defaultValue": "",
       "required": false,
       "helpMarkDown": "Optional. Only applicable to STANDARD_HA tier which protects the instance against zonal failures by provisioning it across two zones. If provided, it must be a different zone from the one provided in `Instance zone`",
-      "visibleRule": "operation = create && instanceTier = STANDARD_HA"
+      "visibleRule": "operation = create && instanceTier != BASIC"
     },
     {
       "name": "instanceIpRange",
