@@ -18,6 +18,7 @@ _(work in progress)._
 ### Next:
 - **Deploy and manage App Service and Service Endpoints**
 - **Google Cloud PubSub Lite**
+- **Deploy resources through "Equivalent REST" - JSON deploy file**
 
 ## How to install extension
 Search for "Google Cloud" when adding a new task or go to theAzure DevOps Marketplace and install [**Google Cloud tools for Azure DevOps Pipelines** extension](https://marketplace.visualstudio.com/items?itemName=nexso.azure-devops-google-cloud-tools).
