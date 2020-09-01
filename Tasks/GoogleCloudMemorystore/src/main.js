@@ -439,6 +439,9 @@ async function createInstance(
     reservedIpRange: ipRange,
   };
 
+  taskLib.debug('Requesting GCP with data:');
+  taskLib.debug(JSON.stringify(requestBody));
+
   let res;
   try {
     res = await client.request({
@@ -704,16 +707,22 @@ async function main() {
 
         // Redis config
         // convert value to put underscores, like: REDIS32 to REDIS_3_2
-        const version = taskLib.getInput('redisVersion', true).replace(/[\d]/g, (n) => `_${n}`);
+        const version = taskLib.getInput('redisVersion', true).replace('latest', '').replace(/[\d]/g, (n) => `_${n}`);
         const redisConfig = {
           'maxmemory-policy': taskLib.getInput('redisMaxMemoryPolicy', false) || 'noeviction',
           'notify-keyspace-events': taskLib.getInput('redisNotifyEvents', false) || '',
-          activedefrag: taskLib.getBoolInput('redisActiveDefrag', false) || false,
-          'lfu-decay-time': getNumberInput('redisLfuDecayTime', false) || 1,
-          'lfu-log-factor': getNumberInput('redisLfuLogFactor', false) || 10,
-          'stream-node-max-bytes': getNumberInput('redisStreamMaxBytes', false) || 4096,
-          'stream-node-max-entries': getNumberInput('redisStreamMaxEntries', false) || 100,
         };
+
+        if (version !== 'REDIS32') {
+          redisConfig.activedefrag = taskLib.getBoolInput('redisActiveDefrag', false) || false;
+          redisConfig['lfu-decay-time'] = getNumberInput('redisLfuDecayTime', false) || 1;
+          redisConfig['lfu-log-factor'] = getNumberInput('redisLfuLogFactor', false) || 10;
+        }
+
+        if (version === 'REDIS50') {
+          redisConfig['stream-node-max-bytes'] = getNumberInput('redisStreamMaxBytes', false) || 4096;
+          redisConfig['stream-node-max-entries'] = getNumberInput('redisStreamMaxEntries', false) || 100;
+        }
 
         // Transform in arrays
         const arrLabels = parseListInput(labels);

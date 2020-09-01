@@ -18,16 +18,16 @@
   },
   "groups": [
     {
-      "name": "GCPResourceOptions",
-      "displayName": "Google Cloud resource options",
-      "isExpanded": false,
-      "visibleRule": "operation = create"
-    },
-    {
       "name": "RedisConfig",
       "displayName": "Redis Custom Config",
       "isExpanded": true,
       "visibleRule": "operation = create" 
+    },
+    {
+      "name": "GCPResourceOptions",
+      "displayName": "Google Cloud resource options",
+      "isExpanded": false,
+      "visibleRule": "operation = create"
     }
   ],
   "inputs": [{
@@ -64,7 +64,7 @@
       "type": "pickList",
       "label": "Operation",
       "required": true,
-      "defaultValue": "publish",
+      "defaultValue": "create",
       "options": {
         "create": "Create/Update instance",
         "delete": "Delete instance",
@@ -214,7 +214,7 @@
       "defaultValue": "latest",
       "required": true,
       "options": {
-        "latest": "Latest",
+        "latest": "Latest (v4)",
         "REDIS32": "3.2",
         "REDIS40": "4.0",
         "REDIS50": "5.0"

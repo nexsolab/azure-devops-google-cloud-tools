@@ -24,6 +24,7 @@ See [How to install](/#how-to-install-extension) for more instructions.
   Upgrade existing Redis instance to a newer version.
 
 Some operations export this output variables:
+
 - `RedisHost` Hostname or IP address of the exposed Redis endpoint used by clients to connect to the service.
 - `RedisPort` The port number of the exposed Redis endpoint.
 - `RedisCurrentLocation` The current zone where the Redis endpoint is placed. For Basic Tier instances, this will always be the same as the locationId provided by the user at creation time. For Standard Tier instances, this can be either locationId or alternativeLocationId and can change after a failover event.
