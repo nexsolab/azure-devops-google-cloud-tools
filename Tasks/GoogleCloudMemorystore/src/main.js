@@ -692,16 +692,19 @@ async function main() {
       case 'create': {
         const labels = taskLib.getInput('gcpLabels', false) || '';
         const displayName = taskLib.getInput('instanceDisplayName', false) || '';
-        const tier = taskLib.getInput('instanceTier', true);
+        const tier = taskLib.getInput('instanceTier', true).replace('STANDARD', 'STANDARD_HA');
         const memorySize = getNumberInput('instanceMemorySize', true);
         const network = taskLib.getInput('instanceNetwork', false) || '';
-        const connectMode = taskLib.getInput('instanceConnectMode', false) || 'DIRECT_PEERING';
+        // Fix the value of connectMode
+        let connectMode = taskLib.getInput('instanceConnectMode', false) || 'DIRECT_PEERING';
+        connectMode = connectMode.replace('DIRECT', 'DIRECT_PEERING').replace('PRIVATE', 'PRIVATE_SERVICE_ACCESS');
         const zone = taskLib.getInput('instanceZone', false) || '';
         const alternativeZone = taskLib.getInput('instanceAlternativeZone', false) || '';
         const ipRange = taskLib.getInput('instanceIpRange', false) || '';
 
         // Redis config
-        const version = taskLib.getInput('redisVersion', true);
+        // convert value to put underscores, like: REDIS32 to REDIS_3_2
+        const version = taskLib.getInput('redisVersion', true).replace(/[\d]/g, (n) => `_${n}`);
         const redisConfig = {
           'maxmemory-policy': taskLib.getInput('redisMaxMemoryPolicy', false) || 'noeviction',
           'notify-keyspace-events': taskLib.getInput('redisNotifyEvents', false) || '',
@@ -741,7 +744,9 @@ async function main() {
       }
 
       case 'failover': {
-        const mode = taskLib.getInput('instanceDataProtectionMode', true);
+        let mode = taskLib.getInput('instanceDataProtectionMode', true);
+        // Fix mode
+        mode = mode.replace('LIMITED', 'LIMITED_DATA_LOSS').replace('FORCED', 'FORCE_DATA_LOSS');
         result = await failover(auth.client, auth.projectId, region, name, mode);
         break;
       }
