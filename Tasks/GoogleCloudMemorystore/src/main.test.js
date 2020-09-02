@@ -6,7 +6,7 @@ import * as ttm from 'azure-pipelines-task-lib/mock-test';
 
 describe('Google Cloud Memorystore', function suite() {
   let created = false;
-  this.timeout(60 * 1000);
+  this.timeout(30 * 60 * 1000);
 
   it('Create a new instance', (done) => {
     this.timeout(80 * 1000);
@@ -22,7 +22,7 @@ describe('Google Cloud Memorystore', function suite() {
     assert.equal(tr.errorIssues.length, 0, 'should have no errors');
     created = tr.succeeded;
 
-    setTimeout(done, 40 * 1000);
+    done();
   });
 
   it('Upgrade the instance', (done) => {
@@ -39,7 +39,7 @@ describe('Google Cloud Memorystore', function suite() {
     assert.equal(tr.succeeded, true, 'should have succeeded');
     assert.equal(tr.errorIssues.length, 0, 'should have no errors');
 
-    setTimeout(done, 30 * 1000);
+    done();
   });
 
   it('Failover the instance', (done) => {

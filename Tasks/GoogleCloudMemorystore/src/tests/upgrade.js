@@ -17,7 +17,7 @@ tmr.setInput('SCserviceAccount', 'test-runner');
 tmr.setInput('operation', 'upgrade');
 tmr.setInput('gcpRegion', 'us-east1');
 tmr.setInput('instanceName', 'gcptoolsredis');
-tmr.setInput('redisVersion', 'REDIS40');
+tmr.setInput('redisVersion', 'REDIS50');
 tmr.setInput('waitOperation', true);
 
 tmr.run();

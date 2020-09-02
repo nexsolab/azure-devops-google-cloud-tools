@@ -256,7 +256,7 @@ function getNumberInput(name, required = false) {
  * @returns {Operation} The API result data
  */
 async function getOperation(client, project, region, operation) {
-  const url = `projects/${project}/locations/${region}/operations/${operation}`;
+  const url = operation;
   console.log('Check operation status...');
 
   let res;
@@ -272,6 +272,9 @@ async function getOperation(client, project, region, operation) {
     console.error(JSON.stringify(error.response.data));
     throw error;
   }
+
+  taskLib.debug('Response of operation was:');
+  taskLib.debug(JSON.stringify(res));
 
   return res && res.data;
 }
@@ -304,11 +307,10 @@ async function checkOperation(resolve, reject, client, project, region, operatio
   } else {
     // Check the status of operation
     try {
+      tries += 1;
       result = await getOperation(client, project, region, operation);
-      tries += 1;
     } catch (error) {
-      // just update tries and errors count
-      tries += 1;
+      // just update errors count
       errors += 1;
     }
   }
@@ -320,12 +322,12 @@ async function checkOperation(resolve, reject, client, project, region, operatio
   }
 
   // Too many errors
-  if (tries > 15) {
+  if (tries > 30) {
     reject('Too many attempts.');
     return;
   }
 
-  if (result.done) {
+  if (result && result.done) {
     console.log('Provisioning finished!');
     if (typeof result.response === 'object') {
       resolve(result.response);
@@ -334,7 +336,7 @@ async function checkOperation(resolve, reject, client, project, region, operatio
     }
   } else {
     exponent += 1;
-    if (exponent > 5) exponent = 1;
+    if (exponent > 5) exponent = 1 * Math.round(tries / 10);
 
     const seconds = 2 ** exponent;
     const detail = result.metadata && result.metadata.statusDetail;
@@ -494,18 +496,10 @@ async function updateInstance(
 
   // New
   const requestBody = {
-    tier,
-    name: `${url}/${name}`,
-    authorizedNetwork: network,
-    connectMode,
     displayName,
     labels,
-    locationId: zone,
-    alternativeLocationId: alternativeZone,
     memorySizeGb: memorySize,
     redisConfigs,
-    redisVersion: version,
-    reservedIpRange: ipRange,
   };
 
   // Get only the differences, including new props
@@ -513,20 +507,24 @@ async function updateInstance(
   taskLib.debug(`Changed or new properties of the existing instance are: ${propertiesToArray(diff).join(',')}`);
   taskLib.debug(JSON.stringify(diff, null, 2));
 
-  // Nothing changed
-  if (!diff) {
-    console.log('Nothing was changed in the instance.');
-    return checkResultAndGetData({
-      status: 200,
-      data: requestBody,
-    });
-  }
-
   // Get only changed props
   const changedProps = deepDiff(currentInstance, requestBody) || {};
   const updateMask = propertiesToArray(changedProps).join(',');
   const qsMask = encodeURIComponent(updateMask);
   taskLib.debug(`Changed attributes are: ${updateMask}`);
+
+  // Nothing changed
+  if (!diff || !updateMask) {
+    console.log('Nothing was changed in the instance.');
+    return checkResultAndGetData({
+      status: 200,
+      data: {
+        name: 'none',
+        metadata: {},
+        done: true,
+      },
+    });
+  }
 
   // Update
   let res;
@@ -714,14 +712,15 @@ async function main() {
         };
 
         if (version !== 'REDIS32') {
-          redisConfig.activedefrag = taskLib.getBoolInput('redisActiveDefrag', false) || false;
-          redisConfig['lfu-decay-time'] = getNumberInput('redisLfuDecayTime', false) || 1;
-          redisConfig['lfu-log-factor'] = getNumberInput('redisLfuLogFactor', false) || 10;
+          const activeDefrag = taskLib.getBoolInput('redisActiveDefrag', false) || false;
+          redisConfig.activedefrag = activeDefrag ? 'yes' : 'no';
+          redisConfig['lfu-decay-time'] = taskLib.getInput('redisLfuDecayTime', false) || '1';
+          redisConfig['lfu-log-factor'] = taskLib.getInput('redisLfuLogFactor', false) || '10';
         }
 
         if (version === 'REDIS50') {
-          redisConfig['stream-node-max-bytes'] = getNumberInput('redisStreamMaxBytes', false) || 4096;
-          redisConfig['stream-node-max-entries'] = getNumberInput('redisStreamMaxEntries', false) || 100;
+          redisConfig['stream-node-max-bytes'] = taskLib.getInput('redisStreamMaxBytes', false) || '4096';
+          redisConfig['stream-node-max-entries'] = taskLib.getInput('redisStreamMaxEntries', false) || '100';
         }
 
         // Transform in arrays
@@ -731,7 +730,7 @@ async function main() {
         const instance = await getInstance(auth.client, auth.projectId, region, name);
 
         if (instance) {
-          console.log('Function already exists.');
+          console.log('Instance already exists.');
           result = await updateInstance(
             auth.client, auth.projectId, region, name, displayName,
             tier, memorySize, network, connectMode, zone, alternativeZone,
@@ -761,7 +760,8 @@ async function main() {
       }
 
       case 'upgrade': {
-        const version = taskLib.getInput('redisVersion', true);
+        // convert value to put underscores, like: REDIS32 to REDIS_3_2
+        const version = taskLib.getInput('redisVersion', true).replace('latest', '').replace(/[\d]/g, (n) => `_${n}`);
         result = await upgrade(auth.client, auth.projectId, region, name, version);
         break;
       }
@@ -774,6 +774,8 @@ async function main() {
     const shouldWait = taskLib.getBoolInput('waitOperation', false) || false;
 
     if (shouldWait) {
+      taskLib.debug('Waiting for operation:');
+      taskLib.debug(JSON.stringify(result));
       const finalResult = await waitOperation(auth.client, auth.projectId, region, result);
       taskSuccess = true;
 
