@@ -24,16 +24,16 @@
       "visibleRule": "operation = create"
     },
     {
-      "name": "PushConfig",
-      "displayName": "Push Config",
-      "isExpanded": true,
-      "visibleRule": "operation = subscribe && subMechanism != pull" 
-    },
-    {
       "name": "MechanismAutoQuestions",
       "displayName": "Wizard: \"pull\" or \"push\"?",
       "isExpanded": true,
       "visibleRule": "operation = subscribe && subMechanism = auto" 
+    },
+    {
+      "name": "PushConfig",
+      "displayName": "Push Config",
+      "isExpanded": true,
+      "visibleRule": "operation = subscribe && subMechanism != pull" 
     },
     {
       "name": "RetainPolicy",
@@ -259,8 +259,8 @@
       "name": "subAutoPublic",
       "type": "radio",
       "label": "Whether the resource can be accessed publicly or an environment where credentials are not feasible to set up",
-      "defaultValue": "pull",
-      "required": false,
+      "defaultValue": "",
+      "required": true,
       "groupName": "MechanismAutoQuestions",
       "options": {
         "pull": "No public access",
@@ -271,8 +271,8 @@
       "name": "subAutoFlowControl",
       "type": "radio",
       "label": "Flow control",
-      "defaultValue": "pull",
-      "required": false,
+      "defaultValue": "",
+      "required": true,
       "groupName": "MechanismAutoQuestions",
       "options": {
         "pull": "The subscriber client controls the rate of delivery",
@@ -332,7 +332,7 @@
     {
       "name": "subRetainAcked",
       "type": "boolean",
-      "label": "Retain Acked Messages",
+      "label": "Retain acked messages",
       "defaultValue": false,
       "required": false,
       "groupName": "RetainPolicy",
@@ -341,7 +341,7 @@
     {
       "name": "subMessageRetentionDuration",
       "type": "string",
-      "label": "Message Retention Duration Value (10m-7d)",
+      "label": "Message retention duration (10m-7d)",
       "defaultValue": "7",
       "required": true,
       "groupName": "RetainPolicy",
@@ -359,7 +359,6 @@
         "d": "Days",
         "m": "Minutes"
       },
-      "helpMarkDown": "How long to retain unacknowledged messages in the subscription's backlog, from the moment a message is published. If retainAckedMessages is true, then this also configures the retention of acknowledged messages, and thus configures how far back in time a `subscriptions.seek` can be done.<br>Defaults to 7 days. Cannot be more than 7 days or less than 10 minutes.",
       "visibleRule": "subRetainAcked = true"
     },
     {

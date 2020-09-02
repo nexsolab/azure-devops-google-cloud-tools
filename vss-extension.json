@@ -3,9 +3,9 @@
   "id": "azure-devops-google-cloud-tools",
   "publisher": "nexso",
   "version": "1.3.0",
-  "name": "Google Cloud tools for Azure DevOps Pipelines",
+  "name": "Google Cloud Tools",
   "scopes": ["vso.build", "vso.build_execute", "vso.release"],
-  "description": "Google Cloud tasks like CLI, Deploy Apps, Functions, manage DNS records, PubSub and Redis instances.",
+  "description": "Deploy code and create: Apps, Functions, Redis instances, PubSub topics and subscriptions, manage DNS records and Google Cloud resources or use the gcloud CLI.",
   "public": false,
   "categories": ["Azure Pipelines"],
   "icons": {
@@ -17,7 +17,15 @@
     "google cloud",
     "google cloud platform",
     "gcp",
-    "app services"
+    "app services",
+    "functions",
+    "deploy",
+    "cloud",
+    "redis",
+    "pubsub",
+    "iac",
+    "infra",
+    "infrastructure"
   ],
   "targets": [{
     "id": "Microsoft.VisualStudio.Services"
@@ -97,6 +105,15 @@
       "properties": {
         "name": "Tasks/GoogleCloudPubSub"
       }
+    },
+    {
+      "id": "GoogleCloudMemorystore",
+      "description": "Manage Redis instances",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+        "name": "Tasks/GoogleCloudMemorystore"
+      }
     }
   ],
   "links": {
@@ -143,6 +160,9 @@
     },
     {
       "path": "Tasks/GoogleCloudPubSub"
+    },
+    {
+      "path": "Tasks/GoogleCloudMemorystore"
     }
   ]
 }

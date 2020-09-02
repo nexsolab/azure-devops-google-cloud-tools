@@ -914,12 +914,12 @@ async function main() {
         const arrRegions = persistenceRegions.split(',');
         const arrLabels = parseListInput(labels);
 
-        // Check if the function already exists
+        // Check if the topic already exists
         let result;
         const topic = await getTopic(auth.client, auth.projectId, name);
 
         if (topic) {
-          console.log('Function already exists.');
+          console.log('Topic already exists.');
           result = await updateTopic(
             auth.client, auth.projectId, name, arrRegions, arrLabels, kmsKeyName, topic,
           );
