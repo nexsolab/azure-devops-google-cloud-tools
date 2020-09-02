@@ -56,16 +56,16 @@ Or you can use the role:
 
 #### Create/Update instance
 
-![](screenshots/xxxx.png)
+![](screenshots/redisc.png)
 
 #### Delete instance
 
-![](screenshots/xxxx.png)
+![](screenshots/redisd.png)
 
 #### Failover instance
 
-![](screenshots/xxxx.png)
+![](screenshots/redisf.png)
 
 #### Upgrade instance
 
-![](screenshots/xxxx.png)
+![](screenshots/redisu.png)

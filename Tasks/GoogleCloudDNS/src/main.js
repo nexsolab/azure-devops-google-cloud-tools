@@ -36,7 +36,7 @@ async function getAuthenticatedClient(scopes = []) {
 
       if (schema === 'ms.vss-endpoint.endpoint-auth-scheme-oauth2') {
         const authSc = taskLib.getEndpointAuthorization(account);
-        taskLib.debug(JSON.stringify(authSc));
+        taskLib.debug(JSON.stringify(authSc, null, 2));
       } else {
         jsonCredential = taskLib.getEndpointAuthorizationParameter(account, 'certificate', false);
         taskLib.debug('Recovered JSON file contents');
@@ -127,7 +127,7 @@ async function getAuthenticatedClient(scopes = []) {
   } catch (error) {
     taskLib.error(`Failed to authenticate in Google Cloud: ${error.message}`);
     taskLib.debug(error.stack);
-    taskLib.debug(JSON.stringify(error));
+    taskLib.debug(JSON.stringify(error, null, 2));
     taskLib.setResult(taskLib.TaskResult.Failed);
     return null;
   }
@@ -145,7 +145,7 @@ function checkResultAndGetData(res) {
     status: res.status,
     statusText: res.statusText,
     data: res.data,
-  }));
+  }, null, 2));
 
   if (res.status >= 400 || !res.data) {
     if (res.data && res.data.error) {
