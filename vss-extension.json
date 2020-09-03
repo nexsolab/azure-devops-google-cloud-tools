@@ -125,6 +125,9 @@
     },
     "support": {
       "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
+    },
+    "privacypolicy": {
+      "uri": "https://github.com/nexsolab/azure-devops-google-cloud-tools/blob/master/privacy-policy.md"
     }
   },
   "repository": {

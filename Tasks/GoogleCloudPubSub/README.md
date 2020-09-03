@@ -1,3 +1,5 @@
+![Build status](https://dev.azure.com/nexsobr/nx-team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.TaskPubSub?branchName=master) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=azure-devops-google-cloud-tools-task-pubsub&metric=alert_status)](https://sonarcloud.io/dashboard?id=azure-devops-google-cloud-tools-task-pubsub)
+
 # <img src="src/icon.svg" height="48"> Google Cloud PubSub
 
 Manage PubSub topics, subscriptions and messages.
