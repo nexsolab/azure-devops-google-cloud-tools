@@ -7,8 +7,8 @@ _(work in progress)._
 
 ## Tasks
 
-|<!-- -->|<!-- -->|
-|-|-|-|
+|||
+|-|-|
 | [<img src="https://raw.githubusercontent.com/nexsolab/azure-devops-google-cloud-tools/master/Tasks/GoogleCloudSdkTool/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudSdkTool) | **[Google Cloud SDK tool installer](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudSdkTool)**<br>Install gcloud CLI for use in all tasks or for custom commands. |
 | [<img src="https://raw.githubusercontent.com/nexsolab/azure-devops-google-cloud-tools/master/Tasks/GoogleCloudFunctions/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions) | **[Google Cloud Functions](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions)**<br>Deploy code to functions or manage Cloud Functions:<br> Create/Update, Delete or Call functions. |
 | [<img src="https://raw.githubusercontent.com/nexsolab/azure-devops-google-cloud-tools/master/Tasks/GoogleCloudPubSub/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudPubSub) | **[Google Cloud PubSub](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudPubSub)**<br>Manage PubSub topics, subscriptions and publish or get messages from topic. |
