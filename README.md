@@ -1,6 +1,6 @@
 ![Build status](https://dev.azure.com/nexsobr/nx-team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.BaseExtension) ![Release status](https://vsrm.dev.azure.com/nexsobr/_apis/public/Release/badge/7c7f8052-bec7-4f7d-b267-22a6f7da4a37/5/5) 
 
-# Google Cloud Tools for Azure DevOps Pipelines
+# Google Cloud Tools
 
 Google Cloud Platform (GCP) tasks for Azure DevOps Pipelines
 _(work in progress)._
@@ -9,11 +9,11 @@ _(work in progress)._
 
 |||
 |-|-|
-| [<img src="https://raw.githubusercontent.com/nexsolab/azure-devops-google-cloud-tools/master/Tasks/GoogleCloudSdkTool/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudSdkTool) | **[Google Cloud SDK tool installer](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudSdkTool)**<br>Install gcloud CLI for use in all tasks or for custom commands. |
-| [<img src="https://raw.githubusercontent.com/nexsolab/azure-devops-google-cloud-tools/master/Tasks/GoogleCloudFunctions/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions) | **[Google Cloud Functions](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions)**<br>Deploy code to functions or manage Cloud Functions:<br> Create/Update, Delete or Call functions. |
-| [<img src="https://raw.githubusercontent.com/nexsolab/azure-devops-google-cloud-tools/master/Tasks/GoogleCloudPubSub/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudPubSub) | **[Google Cloud PubSub](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudPubSub)**<br>Manage PubSub topics, subscriptions and publish or get messages from topic. |
-| [<img src="https://raw.githubusercontent.com/nexsolab/azure-devops-google-cloud-tools/master/Tasks/GoogleCloudMemorystore/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudMemorystore) | **[Google Cloud Memorystore](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudMemorystore)**<br>Create, delete, failover or upgrade Redis instances. |
-| [<img src="https://raw.githubusercontent.com/nexsolab/azure-devops-google-cloud-tools/master/Tasks/GoogleCloudDNS/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS) | **[Manage DNS records](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS)**<br>Add, remove or get the value of the record sets for managed zones. |
+| [<img src="Tasks/GoogleCloudSdkTool/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudSdkTool) | **[Google Cloud SDK tool installer](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudSdkTool)**<br>Install gcloud CLI for use in all tasks or for custom commands. |
+| [<img src="Tasks/GoogleCloudFunctions/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions) | **[Google Cloud Functions](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions)**<br>Deploy code to functions or manage Cloud Functions:<br> Create/Update, Delete or Call functions. |
+| [<img src="Tasks/GoogleCloudPubSub/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudPubSub) | **[Google Cloud PubSub](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudPubSub)**<br>Manage PubSub topics, subscriptions and publish or get messages from topic. |
+| [<img src="Tasks/GoogleCloudMemorystore/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudMemorystore) | **[Google Cloud Memorystore](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudMemorystore)**<br>Create, delete, failover or upgrade Redis instances. |
+| [<img src="Tasks/GoogleCloudDNS/src/icon.svg" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS) | **[Manage DNS records](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS)**<br>Add, remove or get the value of the record sets for managed zones. |
 
 ### Next:
 - **Deploy and manage App Service and Service Endpoints**
@@ -36,17 +36,17 @@ And put the credentials exported in JSON from a service account from your Google
 
 ## Release notes
 
-### v1.4
+### v1.4 - 2020-09-02
 
 - Cloud Memorystore **[new]**
 - New visual for extension Readme
 
-#### v1.4.1
+#### v1.4.1 - 2020-09-05
 
 - Privacy Policy
-- Icons point to GitHub
+- Icons exported with extension
 
-### v1.3
+### v1.3 - 2020-08-08
 
 - Cloud PubSub [new]
 
