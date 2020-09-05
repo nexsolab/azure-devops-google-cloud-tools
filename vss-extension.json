@@ -166,6 +166,22 @@
     },
     {
       "path": "Tasks/GoogleCloudMemorystore"
+    },
+    {
+      "path": "Tasks/GoogleCloudSdkTool/icon.svg",
+      "addressable": true
+    },
+    {
+      "path": "Tasks/GoogleCloudFunctions/src/icon.svg",
+      "addressable": true
+    },
+    {
+      "path": "Tasks/GoogleCloudPubSub/src/icon.svg",
+      "addressable": true
+    },
+    {
+      "path": "Tasks/GoogleCloudMemorystore/src/icon.svg",
+      "addressable": true
     }
   ]
 }
