@@ -1,0 +1,78 @@
+{
+  "name": "googlecloudappengine",
+  "version": "1.0.0",
+  "description": "Deploy and manage App Service and Service Endpoints",
+  "main": "main.js",
+  "scripts": {
+    "test": "mocha ./**/main.test.js",
+    "build": "npx babel src --out-dir dist --copy-files --ignore node_modules/**/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudAppEngine"
+  },
+  "keywords": [
+    "azure",
+    "devops",
+    "pipelines",
+    "release",
+    "gcloud",
+    "cli",
+    "google",
+    "cloud",
+    "platform",
+    "gcp",
+    "deploy",
+    "task",
+    "iac",
+    "pubsub",
+    "subscription",
+    "subscribe",
+    "publish",
+    "topic",
+    "queue",
+    "message"
+  ],
+  "author": {
+    "name": "Gabriel Anderson",
+    "url": "https://github.com/gcacars"
+  },
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/nexsolab/azure-devops-google-cloud-tools/issues"
+  },
+  "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudAppEngine#readme",
+  "dependencies": {
+    "azure-pipelines-task-lib": "^2.9.6",
+    "google-auth-library": "^6.0.5",
+    "return-deep-diff": "^0.4.0",
+    "securefiles-babel": "file:../Common/securefiles-babel"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "10"
+          }
+        }
+      ]
+    ],
+    "plugins": [],
+    "env": {
+      "debug": {
+        "sourceMaps": "inline",
+        "retainLines": true
+      }
+    }
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.10.5",
+    "@babel/core": "^7.10.5",
+    "@babel/node": "^7.10.5",
+    "@babel/polyfill": "^7.10.4",
+    "@babel/preset-env": "^7.10.4",
+    "babel-eslint": "^10.1.0"
+  }
+}

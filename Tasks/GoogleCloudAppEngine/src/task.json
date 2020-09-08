@@ -1,0 +1,374 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
+  "id": "51bba03e-db65-4418-bdb2-98274c27055a",
+  "name": "GoogleCloudAppEngine",
+  "friendlyName": "Google Cloud App Engine",
+  "description": "Deploy and manage App Service and Service Endpoints.",
+  "helpUrl": "https://github.com/nexsolab/azure-devops-google-cloud-tools",
+  "helpMarkDown": "[Learn more about this task](https://github.com/nexsolab/azure-devops-google-cloud-tools#readme) or [see the Cloud App Engine documentation](https://cloud.google.com/appengine/docs/admin-api)",
+  "category": "Deploy",
+  "runsOn": ["Agent"],
+  "visibility": ["Build", "Release"],
+  "author": "Gabriel Anderson",
+  "instanceNameFormat": "Cloud App Engine - $(operation) $(instanceName)",
+  "version": {
+    "Major": 0,
+    "Minor": 1,
+    "Patch": 0
+  },
+  "groups": [
+    {
+      "name": "AppCertificate",
+      "displayName": "Custom Domain and SSL Certificate",
+      "isExpanded": true,
+      "visibleRule": "appCustomCert = true || appCustomDNS = true" 
+    },
+    {
+      "name": "GCPResourceOptions",
+      "displayName": "Google Cloud resource options",
+      "isExpanded": false,
+      "visibleRule": "operation = create"
+    }
+  ],
+  "inputs": [{
+      "name": "authenticationMethod",
+      "type": "pickList",
+      "label": "Authentication method",
+      "defaultValue": "serviceAccount",
+      "options": {
+        "serviceAccount": "Service Account (Connected Service)",
+        "jsonFile": "JSON file credentials"
+      },
+      "helpMarkDown": "Authorization requires the following Google IAM roles:<br />`roles/dns.admin`"
+    },
+    {
+      "name": "SCserviceAccount",
+      "type": "connectedService:GoogleCloudServiceEndpoint",
+      "label": "Google Cloud Service Account",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Select the Service Account that should be used for the next steps",
+      "visibleRule": "authenticationMethod = serviceAccount"
+    },
+    {
+      "name": "jsonCredentials",
+      "type": "secureFile",
+      "label": "JSON Credentials file",
+      "required": true,
+      "defaultValue": "",
+      "helpMarkDown": "Select the JSON file with the credentials, see for more information",
+      "visibleRule": "authenticationMethod = jsonFile"
+    },
+    {
+      "name": "operation",
+      "type": "pickList",
+      "label": "Operation",
+      "required": true,
+      "defaultValue": "create",
+      "options": {
+        "create": "Create an app",
+        "update": "Update an existing app",
+        "delete": "Delete an app",
+        "repair": "Repair features for the app",
+        "firewall": "Create a firewall ingress rule",
+        "service": "Create a service or a version",
+        "delete-version": "Delete an existing version"
+      }
+    },
+    {
+      "name": "gcpRegion",
+      "type": "pickList",
+      "label": "Region",
+      "defaultValue": "",
+      "required": true,
+      "options": {
+        "asia-east1": "Taiwan (asia-east1)",
+        "asia-east2": "Hong Kong (asia-east2)",
+        "asia-northeast1": "Tokyo (asia-northeast1)",
+        "asia-northeast2": "Osaka (asia-northeast2)",
+        "asia-northeast3": "Seoul (asia-northeast3)",
+        "asia-south1": "Mumbai (asia-south1)",
+        "asia-southeast1": "Singapore (asia-southeast1)",
+        "asia-southeast2": "Jakarta (asia-southeast2)",
+        "australia-southeast1": "Sydney (australia-southeast1)",
+        "europe-north1": "Finland (europe-north1)",
+        "europe-west1": "Belgium (europe-west1)",
+        "europe-west2": "London (europe-west2)",
+        "europe-west3": "Frankfurt (europe-west3)",
+        "europe-west4": "Netherlands (europe-west4)",
+        "europe-west6": "Zurich (europe-west6)",
+        "northamerica-northeast1": "Montréal (northamerica-northeast1)",
+        "southamerica-east1": "São Paulo (southamerica-east1)",
+        "us-central1": "Iowa (us-central1)",
+        "us-east1": "South Carolina (us-east1)",
+        "us-east4": "Northern Virginia (us-east4)",
+        "us-west1": "Oregon (us-west1)",
+        "us-west2": "Los Angeles (us-west2)",
+        "us-west3": "Salt Lake City (us-west3)",
+        "us-west4": "Las Vegas (us-west4)"
+      },
+      "properties": {
+        "EditableOptions": "True"
+      },
+      "helpMarkDown": "Enter or select the region where this function should be created."
+    },
+    {
+      "name": "gcpLabels",
+      "type": "multiLine",
+      "label": "Resource labels",
+      "groupName": "GCPResourceOptions",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Put JSON or use the editor.<br />**Keys** must start with a lowercase character and contain only hyphens (\\-), underscores (\\_), lowercase characters, and numbers.<br />**Values** must contain only hyphens (\\-), underscores (\\_), lowercase characters, and numbers.",
+      "properties": {
+        "editorExtension": "ms.vss-services-azure.parameters-grid"
+      }
+    },
+    {
+      "name": "appServingStatus",
+      "type": "pickList",
+      "label": "Serving status",
+      "defaultValue": "",
+      "required": false,
+      "options": {
+        "serving": "Serving",
+        "userDisabled": "Application has been disabled by the user",
+        "systemDisabled": "Application has been disabled by the system"
+      },
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "appCookieExp",
+      "type": "string",
+      "label": "Default cookie expiration (in seconds)",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Cookie expiration policy for this application.",
+      "visibleRule": "operation = create || operation = update"
+    },
+    {
+      "name": "appGCRDomain",
+      "type": "string",
+      "label": "GCR domain",
+      "defaultValue": "gmail.com",
+      "required": false,
+      "helpMarkDown": "The Google Container Registry domain used for storing managed build docker images for this application.",
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "appAuthDomain",
+      "type": "string",
+      "label": "Auth domain",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Google Apps authentication domain that controls which users can access this application.<br>Defaults to open access for any Google Account.",
+      "visibleRule": "operation = create || operation = update"
+    },
+    {
+      "name": "appDatabase",
+      "type": "pickList",
+      "label": "Associated database",
+      "defaultValue": "databaseTypeUnspecified",
+      "required": false,
+      "options": {
+        "databaseTypeUnspecified": "None",
+        "cloudDatastore": "Cloud Datastore",
+        "cloudFirestore": "Cloud Firestore Native",
+        "cloudDatastoreCompatibility": "Cloud Firestore in Datastore Mode"
+      },
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "appOptimizedOS",
+      "type": "boolean",
+      "label": "Use Container-Optimized OS base image for VMs",
+      "defaultValue": true,
+      "required": false,
+      "helpMarkDown": "If true, use [Container-Optimized OS](https://cloud.google.com/container-optimized-os/) base image for VMs, rather than a base Debian image.",
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "appIap",
+      "type": "boolean",
+      "label": "Use Identity-Aware Proxy",
+      "defaultValue": false,
+      "required": false,
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "appIapClientId",
+      "type": "string",
+      "label": "Client ID",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "OAuth2 client ID to use for the authentication flow.",
+      "visibleRule": "operation = create && appIap = true"
+    },
+    {
+      "name": "appIapClientSecret",
+      "type": "string",
+      "label": "Client Secret",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "OAuth2 client secret to use for the authentication flow.",
+      "visibleRule": "operation = create && appIap = true"
+    },
+    {
+      "name": "appCustomDNS",
+      "type": "boolean",
+      "label": "Use custom domains",
+      "defaultValue": false,
+      "required": false,
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "appCustomCert",
+      "type": "boolean",
+      "label": "Upload custom SSL certificate",
+      "defaultValue": false,
+      "required": false,
+      "visibleRule": "operation = create"
+    },
+    {
+      "name": "certificateName",
+      "type": "string",
+      "label": "Name",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "The user-specified display name of the certificate. This is not guaranteed to be unique.",
+      "groupName": "AppCertificate",
+      "visibleRule": "appCustomCert = true"
+    },
+    {
+      "name": "certificateSource",
+      "type": "pickList",
+      "label": "How to send certificate data",
+      "defaultValue": "secure",
+      "required": true,
+      "options": {
+        "path": "Upload a selected certificate file",
+        "secure": "Get from Library secure file",
+        "raw": "Paste raw data"
+      },
+      "groupName": "AppCertificate",
+      "visibleRule": "appCustomCert = true"
+    },
+    {
+      "name": "certificateSecure",
+      "type": "secureFile",
+      "label": "Select certificate file",
+      "required": true,
+      "defaultValue": "",
+      "visibleRule": "appCustomCert = true && certificateSource = secure",
+      "groupName": "AppCertificate"
+    },
+    {
+      "name": "certificatePath",
+      "type": "filePath",
+      "label": "Path to certificate",
+      "defaultValue": "",
+      "required": true,
+      "visibleRule": "appCustomCert = true && certificateSource = path",
+      "groupName": "AppCertificate"
+    },
+    {
+      "name": "certificateRaw",
+      "type": "multiLine",
+      "label": "Certificate RAW data",
+      "defaultValue": "",
+      "required": true,
+      "groupName": "AppCertificate",
+      "visibleRule": "appCustomCert = true && certificateSource = raw"
+    },
+    {
+      "name": "certificateKeySecure",
+      "type": "secureFile",
+      "label": "Select private key file",
+      "required": true,
+      "defaultValue": "",
+      "visibleRule": "appCustomCert = true && certificateSource = secure",
+      "groupName": "AppCertificate"
+    },
+    {
+      "name": "certificateKeyPath",
+      "type": "filePath",
+      "label": "Path to private key",
+      "defaultValue": "",
+      "required": true,
+      "visibleRule": "appCustomCert = true && certificateSource = path",
+      "groupName": "AppCertificate"
+    },
+    {
+      "name": "certificateKeyRaw",
+      "type": "multiLine",
+      "label": "Private key RAW data",
+      "defaultValue": "",
+      "required": true,
+      "groupName": "AppCertificate",
+      "visibleRule": "appCustomCert = true && certificateSource = raw"
+    },
+    {
+      "name": "certificateDeployMode",
+      "type": "pickList",
+      "label": "Deploy mode for DNS and certificates",
+      "defaultValue": "incremental",
+      "required": true,
+      "options": {
+        "incremental": "Incremental - add new ones, ignore existing, don't delete",
+        "maintain": "Maintain - ignore existing, add or delete",
+        "complete": "Complete - add, replace and remove"
+      },
+      "groupName": "AppCertificate"
+    },
+    {
+      "name": "customDns",
+      "type": "string",
+      "label": "Domain mapping ID (custom DNS)",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Relative name of the domain serving the application. Example: `example.com.`",
+      "groupName": "AppCertificate",
+      "visibleRule": "appCustomDNS = true"
+    },
+    {
+      "name": "customDnsAssociate",
+      "type": "boolean",
+      "label": "Associate this DNS with the certificate",
+      "defaultValue": true,
+      "required": true,
+      "helpMarkDown": "SSL support for this domain is configured manually by the user. Either the domain has no SSL support or a user-obtained SSL certificate has been explictly mapped to this domain. To omit SSL support leave this unchecked.",
+      "groupName": "AppCertificate",
+      "visibleRule": "appCustomCert = true && appCustomDNS = true"
+    },
+    {
+      "name": "waitOperation",
+      "type": "boolean",
+      "label": "Wait for long running operation",
+      "defaultValue": false,
+      "required": false,
+      "helpMarkDown": "If enabled, pipeline will wait until resource be modified, instead of just scheduling an operation."
+    }
+  ],
+  "OutputVariables": [
+    {
+      "name": "RedisHost",
+      "description": "Hostname or IP address of the exposed Redis endpoint used by clients to connect to the service."
+    },
+    {
+      "name": "RedisPort",
+      "description": "The port number of the exposed Redis endpoint."
+    },
+    {
+      "name": "RedisCurrentLocation",
+      "description": "The current zone where the Redis endpoint is placed."
+    }
+  ],
+  "minimumAgentVersion": "2.144.0",
+  "execution": {
+    "Node10": {
+      "target": "main.js",
+      "argumentFormat": ""
+    }
+  },
+  "messages": {}
+}
