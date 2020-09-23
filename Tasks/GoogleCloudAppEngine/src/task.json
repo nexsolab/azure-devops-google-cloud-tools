@@ -110,7 +110,8 @@
       "properties": {
         "EditableOptions": "True"
       },
-      "helpMarkDown": "Enter or select the region where this function should be created."
+      "helpMarkDown": "Enter or select the region where this function should be created.",
+      "visibleRule": "operation = create"
     },
     {
       "name": "gcpLabels",
@@ -128,7 +129,7 @@
       "name": "appServingStatus",
       "type": "pickList",
       "label": "Serving status",
-      "defaultValue": "",
+      "defaultValue": "serving",
       "required": false,
       "options": {
         "serving": "Serving",
@@ -143,7 +144,7 @@
       "label": "Default cookie expiration (in seconds)",
       "defaultValue": "",
       "required": false,
-      "helpMarkDown": "Cookie expiration policy for this application.",
+      "helpMarkDown": "Cookie expiration policy for this application. (Default: 1 day)",
       "visibleRule": "operation = create || operation = update"
     },
     {
@@ -312,13 +313,15 @@
       "type": "pickList",
       "label": "Deploy mode for DNS and certificates",
       "defaultValue": "incremental",
-      "required": true,
+      "required": false,
       "options": {
         "incremental": "Incremental - add new ones, ignore existing, don't delete",
+        "update": "Update - add new ones, update existing, but don't delete",
         "maintain": "Maintain - ignore existing, add or delete",
         "complete": "Complete - add, replace and remove"
       },
-      "groupName": "AppCertificate"
+      "groupName": "AppCertificate",
+      "helpMarkDown": "Note: the check will occur comparing display names"
     },
     {
       "name": "customDns",
@@ -333,7 +336,7 @@
     {
       "name": "customDnsAssociate",
       "type": "boolean",
-      "label": "Associate this DNS with the certificate",
+      "label": "Associate this DNS with the certificate above",
       "defaultValue": true,
       "required": true,
       "helpMarkDown": "SSL support for this domain is configured manually by the user. Either the domain has no SSL support or a user-obtained SSL certificate has been explictly mapped to this domain. To omit SSL support leave this unchecked.",
