@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import fs from 'fs';
+import path from 'path';
 import * as taskLib from 'azure-pipelines-task-lib/task';
 // eslint-disable-next-line no-unused-vars
 import { GoogleAuth, OAuth2Client } from 'google-auth-library';
@@ -252,13 +253,12 @@ function getNumberInput(name, required = false) {
  * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project The GCP Project ID
- * @param {string} region The GCP region ID
  * @param {string} operation The operation ID
  * @returns {Operation} The API result data
  */
-async function getOperation(client, project, region, operation) {
+async function getOperation(client, project, operation) {
   const url = operation;
-  console.log('Check operation status...');
+  console.log('Checking operation status...');
 
   let res;
   try {
@@ -292,10 +292,9 @@ let exponent = 1;
  * @param {Function} reject Reject function
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project The GCP Project ID
- * @param {string} region The GCP region ID
  * @param {Operation} operationBody The operation name
  */
-async function checkOperation(resolve, reject, client, project, region, operationBody) {
+async function checkOperation(resolve, reject, client, project, operationBody) {
   /**
    * @type {Operation}
    */
@@ -309,7 +308,7 @@ async function checkOperation(resolve, reject, client, project, region, operatio
     // Check the status of operation
     try {
       tries += 1;
-      result = await getOperation(client, project, region, operation);
+      result = await getOperation(client, project, operation);
     } catch (error) {
       // just update errors count
       errors += 1;
@@ -344,7 +343,7 @@ async function checkOperation(resolve, reject, client, project, region, operatio
     console.log(`Status is ${detail}. Trying again in ${seconds} seconds.`);
 
     setTimeout(async () => {
-      await checkOperation(resolve, reject, client, project, region, operationBody);
+      await checkOperation(resolve, reject, client, project, operationBody);
     }, seconds * 1000);
   }
 }
@@ -355,13 +354,12 @@ async function checkOperation(resolve, reject, client, project, region, operatio
  * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project The GCP Project ID
- * @param {string} region The GCP region ID
  * @param {Operation} operationBody The operation body received from a operation
  * @returns {*} The API result data
  */
-async function waitOperation(client, project, region, operationBody) {
+async function waitOperation(client, project, operationBody) {
   return new Promise((resolve, reject) => {
-    checkOperation(resolve, reject, client, project, region, operationBody).catch(reject);
+    checkOperation(resolve, reject, client, project, operationBody).catch(reject);
   });
 }
 
@@ -467,11 +465,11 @@ async function loadSecureFile(secureFileId) {
 /**
  * Get the contents of the file path.
  *
- * @param {string} path Path to the file
+ * @param {string} filepath Path to the file
  * @returns {string} The contents of the file.
  */
-function getFilepathContent(path) {
-  const files = findMatchingFiles(path);
+function getFilepathContent(filepath) {
+  const files = findMatchingFiles(filepath);
 
   if (files.length === 0) {
     taskLib.error('No file founded.');
@@ -500,14 +498,14 @@ async function getCertificateContent(prefix) {
       return taskLib.getInput(`${prefix}Raw`, true);
 
     case 'path': {
-      const path = taskLib.getPathInput(`${prefix}Path`, true, false);
-      return getFilepathContent(path);
+      const filepath = taskLib.getPathInput(`${prefix}Path`, true, false);
+      return getFilepathContent(filepath);
     }
 
     case 'secure': {
       const secureFileId = taskLib.getInput(`${prefix}Secure`, true);
-      const path = loadSecureFile(secureFileId);
-      return getFilepathContent(path);
+      const filepath = loadSecureFile(secureFileId);
+      return getFilepathContent(filepath);
     }
 
     default:
@@ -516,7 +514,7 @@ async function getCertificateContent(prefix) {
 }
 // #endregion Utils
 
-// #region Operations
+// #region AppOperations
 /**
  * Get the app configuration
  *
@@ -562,7 +560,7 @@ async function getApp(client, project) {
  * @param {boolean} iap Serving infrastructure will authenticate and authorize all incoming requests
  * @param {string} clientId OAuth2 client ID to use for the authentication flow
  * @param {string} clientSecret OAuth2 client secret to use for the authentication flow
- * @returns {Operation} return the operation data
+ * @returns {Operation} The operation metadata.
  */
 async function createApp(
   client, project, region, servingStatus, cookieExp, gcrDomain, authDomain, databaseType,
@@ -622,7 +620,7 @@ async function createApp(
  * @param {number} cookieExp Time in seconds to expire the cookie
  * @param {string} authDomain Google Apps authentication domain that controls which users can access
  * @param {object} currentApp The current app metadata
- * @returns {*} The API result data
+ * @returns {Operation} The operation metadata.
  */
 async function updateApp(client, project, cookieExp, authDomain, currentApp) {
   const url = `apps/${project}`;
@@ -697,7 +695,7 @@ async function updateApp(client, project, cookieExp, authDomain, currentApp) {
  *
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project The GCP Project ID
- * @returns
+ * @returns {Operation} The operation metadata.
  */
 async function repairApp(client, project) {
   const url = `apps/${project}`;
@@ -892,7 +890,7 @@ async function deleteCertificate(client, project, certId) {
     throw error;
   }
 
-  return checkResultAndGetData(res);
+  checkResultAndGetData(res);
 }
 
 /**
@@ -929,7 +927,7 @@ async function listCertificates(client, project) {
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project The GCP Project ID
  * @param {boolean} [newApp=true] Indicates if it is a new app
- * @returns
+ * @returns {CertificateMetadata} The certificate configured to the app.
  */
 async function configureCertificate(client, project, newApp = true) {
   const customCert = taskLib.getBoolInput('appCustomCert', false) || false;
@@ -982,21 +980,149 @@ async function configureCertificate(client, project, newApp = true) {
   return cert;
 }
 
-//const customDNS = taskLib.getBoolInput('appCustomDNS', false) || false;
+/**
+ * @typedef {object} DomainMapping Maps a domain to an application
+ * @property {string} name Full path to the DomainMapping resource in the API.
+ * @property {string} id Relative name of the domain serving the application. Like: `example.com.`
+ * @property {object} sslSettings SSL configuration for this domain
+ * @property {string} sslSettings.certificateId AuthorizedCertificate resource ID configuring SSL
+ * @property {('AUTOMATIC'|'MANUAL')} sslSettings.sslManagementType SSL management type for this
+ *   domain. If AUTOMATIC, a managed certificate is automatically provisioned. If MANUAL,
+ *   certificateId must be manually specified in order to configure SSL for this domain.
+ * @property {string} sslSettings.pendingManagedCertificateId ID of the managed
+ *   AuthorizedCertificate resource currently being provisioned, if applicable
+ * @property {object[]} resourceRecords The resource records to configure this domain mapping
+ */
 
 /**
- * Delete the instance.
+ * Create a custom domain map to an app.
  *
- * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project The GCP Project ID
- * @param {string} region The GCP region ID
- * @param {string} name The name of the Redis intance
- * @returns {*} The API result data
+ * @param {string} dns Relative name of the domain serving the application. Example: `example.com.`
+ * @param {string} certificateId AuthorizedCertificate resource ID configuring SSL for the app
+ * @returns {DomainMapping} The newly created instance of certificate.
  */
-async function deleteInstance(client, project, region, name) {
-  const url = `projects/${project}/locations/${region}/instances/${name}`;
-  console.log(`Deleting Redis ${url}...`);
+async function createDomainMap(client, project, dns, certificateId) {
+  const url = `apps/${project}/domainMappings`;
+  console.log('Configuring custom DNS mapping...');
+
+  /**
+   * @type {DomainMapping}
+   */
+  const requestBody = {
+    id: dns,
+    sslSettings: {
+      certificateId: certificateId || '',
+      sslManagementType: certificateId ? 'MANUAL' : 'AUTOMATIC',
+    },
+  };
+
+  taskLib.debug('Requesting GCP with data:');
+  taskLib.debug(JSON.stringify(requestBody, null, 2));
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'POST',
+      url: `${apiUrl}/${url}`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+
+/**
+ * Update a custom domain map from an app.
+ *
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {string} dns Relative name of the domain serving the application. Example: `example.com.`
+ * @param {string} certificateId AuthorizedCertificate resource ID configuring SSL for the app
+ * @param {DomainMapping} current Current config of the domain mapping
+ * @returns {DomainMapping} The newly created instance of certificate.
+ */
+async function updateDomain(client, project, dns, certificateId, current) {
+  const url = `apps/${project}/domainMappings/${current.id}`;
+  console.log('Updating custom DNS mapping...');
+
+  /**
+   * @type {DomainMapping}
+   */
+  const requestBody = {
+    id: dns,
+    sslSettings: {
+      certificateId: certificateId || '',
+      sslManagementType: certificateId ? 'MANUAL' : 'AUTOMATIC',
+    },
+  };
+
+  // Clone current and remove properties that cannot be changed
+  const currentDNS = { ...current };
+  delete currentDNS.resourceRecords;
+  delete currentDNS.name;
+
+  // Get only the differences, including new props
+  const diff = deepDiff(currentDNS, requestBody, true);
+  taskLib.debug(`Changed or new properties of the existing domain mapping are: ${propertiesToArray(diff).join(',')}`);
+  taskLib.debug(JSON.stringify(diff, null, 2));
+
+  // Get only changed props
+  const changedProps = deepDiff(currentDNS, requestBody) || {};
+  const updateMask = propertiesToArray(changedProps).join(',');
+  const qsMask = encodeURIComponent(updateMask);
+  taskLib.debug(`Changed domain mapping attributes are: ${updateMask}`);
+
+  // Nothing changed
+  if (!diff || !updateMask) {
+    console.log('Nothing was changed in the domain mapping.');
+    return checkResultAndGetData({
+      status: 200,
+      data: current,
+    });
+  }
+
+  taskLib.debug('Requesting GCP with data:');
+  taskLib.debug(JSON.stringify(requestBody, null, 2));
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'PATCH',
+      url: `${apiUrl}/${url}?updateMask=${qsMask}`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+
+/**
+ * Delete a domain mapping.
+ *
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {string} domainMappingId The domain name to delete
+ * @returns {Operation} The operation result.
+ */
+async function deleteDomain(client, project, domainMappingId) {
+  const url = `apps/${project}/domainMappings/${domainMappingId}`;
+  console.log(`Deleting domain mapping ${url}...`);
 
   let res;
   try {
@@ -1016,81 +1142,94 @@ async function deleteInstance(client, project, region, name) {
 }
 
 /**
- * Initiates a failover of the master node to current replica node for a specific STANDARD tier.
+ * List all domain mappgins of an app.
  *
- * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project The GCP Project ID
- * @param {string} region The GCP region ID
- * @param {string} name The name of the Redis intance
- * @param {('LIMITED_DATA_LOSS'|'FORCE_DATA_LOSS'))} mode Available data protection mode
- * @returns {*} The API result data
+ * @returns {DomainMapping[]} Domain Mapping list
  */
-async function failover(client, project, region, name, mode) {
-  const url = `projects/${project}/locations/${region}/instances/${name}`;
-  console.log(`Failover the ${url} to ${mode}...`);
-
-  const requestBody = {
-    dataProtectionMode: mode,
-  };
+async function listDomainMappings(client, project) {
+  const url = `apps/${project}/domainMappings`;
+  console.log('Listing current domain mappings...');
 
   let res;
   try {
     res = await client.request({
-      method: 'POST',
-      url: `${apiUrl}/${url}:failover`,
+      method: 'GET',
+      url: `${apiUrl}/${url}`,
       headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
     });
   } catch (error) {
     console.error(JSON.stringify(error.response.data));
     throw error;
   }
 
-  return checkResultAndGetData(res);
+  const result = checkResultAndGetData(res);
+  return result && result.domainMappings;
 }
 
 /**
- * Initiates a failover of the master node to current replica node for a specific STANDARD tier.
+ * Configure the certificates for the app, adding or updating existing.
  *
- * @author Gabriel Anderson
  * @param {OAuth2Client} client Google Auth Client
  * @param {string} project The GCP Project ID
- * @param {string} region The GCP region ID
- * @param {string} name The name of the Redis intance
- * @param {string} version Specifies the target version of Redis software to upgrade to
- * @returns {*} The API result data
+ * @param {boolean} [newApp=true] Indicates if it is a new app
+ * @param {CertificateMetadata} certificate The certificate configured before
+ * @returns {DomainMapping} The domain mapping configured to the app.
  */
-async function upgrade(client, project, region, name, version) {
-  const url = `projects/${project}/locations/${region}/instances/${name}`;
-  console.log(`Upgrade ${url} to version ${version}...`);
+async function configureDomain(client, project, newApp = true, certificate = null) {
+  const customDomain = taskLib.getBoolInput('appCustomDNS', false) || false;
+  if (!customDomain) return null;
 
-  const requestBody = {
-    redisVersion: version,
-  };
-
-  let res;
-  try {
-    res = await client.request({
-      method: 'POST',
-      url: `${apiUrl}/${url}:upgrade`,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-  } catch (error) {
-    console.error(JSON.stringify(error.response.data));
-    throw error;
+  // List all existing certs
+  /**
+   * @type {DomainMapping[]}
+   */
+  let dnsList = [];
+  if (!newApp) {
+    dnsList = await listDomainMappings(client, project);
+    console.log(`Found ${dnsList.length} domain mapping(s) in the current app.`);
   }
 
-  return checkResultAndGetData(res);
+  // Get data of the cert
+  let dns = taskLib.getInput('customDns', true);
+  if (dns.substr(-1) !== '.') dns = `${dns}.`;
+  const deployMode = taskLib.getInput('certificateDeployMode', false) || 'incremental';
+
+  // Before all, check the deploy mode and if the domain already exists
+  const currentDomain = dnsList.find((c) => c.id === dns);
+
+  // Incremental and Maintain modes ignore existing certs
+  if (currentDomain && ['incremental', 'maintain'].includes(deployMode)) return currentDomain;
+
+  // Associate this DNS with custom certificate
+  const shouldAssociate = taskLib.getBoolInput('customDnsAssociate', false) || true;
+  const certificateId = shouldAssociate && certificate ? certificate.id : undefined;
+
+  // Create or update
+  let domainMap;
+  if (currentDomain) {
+    domainMap = await updateDomain(client, project, dns, certificateId, currentDomain);
+  } else {
+    domainMap = await createDomainMap(client, project, dns, certificateId);
+  }
+
+  if (!domainMap || !domainMap.id) {
+    taskLib.warning('Failed at configuring custom DNS');
+  }
+
+  // Delete others domain
+  if (currentDomain && ['maintain', 'complete'].includes(deployMode)) {
+    await dnsList.filter((c) => c.id !== dns).forEach(async (c) => {
+      await deleteDomain(client, project, c.id);
+    });
+  }
+
+  return domainMap;
 }
-// #endregion Operations
+// #endregion AppOperations
 
 /**
  * Main function
@@ -1144,10 +1283,18 @@ async function main() {
         }
 
         // Configure SSL certificates
+        let certificate;
         try {
-          await configureCertificate(auth.client, auth.projectId);
+          certificate = await configureCertificate(auth.client, auth.projectId, !!instance);
         } catch (error) {
           taskLib.warning(`Fail to configure SSL certificate: ${error.message}`);
+        }
+
+        // Configure custom DNS mapping
+        try {
+          await configureDomain(auth.client, auth.projectId, !!instance, certificate);
+        } catch (error) {
+          taskLib.warning(`Fail to configure DNS mapping: ${error.message}`);
         }
 
         break;
@@ -1164,6 +1311,21 @@ async function main() {
           result = await updateApp(
             auth.client, auth.projectId, cookieExp, authDomain, instance,
           );
+
+          // Configure SSL certificates
+          let certificate;
+          try {
+            certificate = await configureCertificate(auth.client, auth.projectId, !!instance);
+          } catch (error) {
+            taskLib.warning(`Fail to configure SSL certificate: ${error.message}`);
+          }
+
+          // Configure custom DNS mapping
+          try {
+            await configureDomain(auth.client, auth.projectId, !!instance, certificate);
+          } catch (error) {
+            taskLib.warning(`Fail to configure DNS mapping: ${error.message}`);
+          }
         } else {
           taskLib.error(`The app ${auth.projectId} doesn't exist.`);
           result = null;
@@ -1173,21 +1335,6 @@ async function main() {
 
       case 'repair': {
         result = await repairApp(auth.client, auth.projectId);
-        break;
-      }
-
-      case 'failover': {
-        let mode = taskLib.getInput('instanceDataProtectionMode', true);
-        // Fix mode
-        mode = mode.replace('LIMITED', 'LIMITED_DATA_LOSS').replace('FORCED', 'FORCE_DATA_LOSS');
-        result = await failover(auth.client, auth.projectId, region, name, mode);
-        break;
-      }
-
-      case 'upgrade': {
-        // convert value to put underscores, like: REDIS32 to REDIS_3_2
-        const version = taskLib.getInput('redisVersion', true).replace('latest', '').replace(/[\d]/g, (n) => `_${n}`);
-        result = await upgrade(auth.client, auth.projectId, region, name, version);
         break;
       }
 
@@ -1201,13 +1348,14 @@ async function main() {
     if (shouldWait) {
       taskLib.debug('Waiting for operation:');
       taskLib.debug(JSON.stringify(result));
-      const finalResult = await waitOperation(auth.client, auth.projectId, region, result);
+      const finalResult = await waitOperation(auth.client, auth.projectId, result);
       taskSuccess = true;
 
-      if (typeof finalResult.port === 'number' && typeof finalResult.host === 'string') {
-        taskLib.setVariable('RedisHost', finalResult.host);
-        taskLib.setVariable('RedisPort', finalResult.port);
-        taskLib.setVariable('RedisCurrentLocation', finalResult.currentLocationId);
+      if (typeof finalResult.defaultHostname === 'string' && typeof finalResult.name === 'string') {
+        taskLib.setVariable('AppName', finalResult.name);
+        taskLib.setVariable('AppCodeBucket', finalResult.codeBucket);
+        taskLib.setVariable('AppDefaultBucket', finalResult.defaultBucket);
+        taskLib.setVariable('AppDefaultHostname', finalResult.defaultHostname);
       }
     } else {
       taskSuccess = result && result.metadata && result.metadata.createTime;

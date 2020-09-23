@@ -27,7 +27,7 @@
       "name": "GCPResourceOptions",
       "displayName": "Google Cloud resource options",
       "isExpanded": false,
-      "visibleRule": "operation = create"
+      "visibleRule": "operation = create || operation = update"
     }
   ],
   "inputs": [{
@@ -68,7 +68,6 @@
       "options": {
         "create": "Create an app",
         "update": "Update an existing app",
-        "delete": "Delete an app",
         "repair": "Repair features for the app",
         "firewall": "Create a firewall ingress rule",
         "service": "Create a service or a version",
@@ -321,7 +320,7 @@
         "complete": "Complete - add, replace and remove"
       },
       "groupName": "AppCertificate",
-      "helpMarkDown": "Note: the check will occur comparing display names"
+      "helpMarkDown": "Note: the check will occur comparing display names for certificates, and IDs (domain) for custom DNS"
     },
     {
       "name": "customDns",
@@ -338,7 +337,7 @@
       "type": "boolean",
       "label": "Associate this DNS with the certificate above",
       "defaultValue": true,
-      "required": true,
+      "required": false,
       "helpMarkDown": "SSL support for this domain is configured manually by the user. Either the domain has no SSL support or a user-obtained SSL certificate has been explictly mapped to this domain. To omit SSL support leave this unchecked.",
       "groupName": "AppCertificate",
       "visibleRule": "appCustomCert = true && appCustomDNS = true"
@@ -354,16 +353,20 @@
   ],
   "OutputVariables": [
     {
-      "name": "RedisHost",
-      "description": "Hostname or IP address of the exposed Redis endpoint used by clients to connect to the service."
+      "name": "AppName",
+      "description": "Full path to the Application resource in the API. Example: `apps/myapp`."
     },
     {
-      "name": "RedisPort",
-      "description": "The port number of the exposed Redis endpoint."
+      "name": "AppCodeBucket",
+      "description": "Google Cloud Storage bucket that can be used for storing files associated with this application."
     },
     {
-      "name": "RedisCurrentLocation",
-      "description": "The current zone where the Redis endpoint is placed."
+      "name": "AppDefaultHostname",
+      "description": "Hostname used to reach this application, as resolved by App Engine."
+    },
+    {
+      "name": "AppDefaultBucket",
+      "description": "Google Cloud Storage bucket that can be used by this application to store content."
     }
   ],
   "minimumAgentVersion": "2.144.0",
