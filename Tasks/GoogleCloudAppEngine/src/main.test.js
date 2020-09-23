@@ -4,11 +4,11 @@ import path from 'path';
 import assert from 'assert';
 import * as ttm from 'azure-pipelines-task-lib/mock-test';
 
-describe('Google Cloud Memorystore', function suite() {
+describe('Google Cloud App Engine', function suite() {
   let created = false;
   this.timeout(30 * 60 * 1000);
 
-  it('Create a new instance', (done) => {
+  it('Create a new app', (done) => {
     this.timeout(80 * 1000);
 
     const tp = path.join(__dirname, 'tests', 'create.js');
@@ -16,7 +16,7 @@ describe('Google Cloud Memorystore', function suite() {
     const tr = new ttm.MockTestRunner(tp, tj);
     tr.run();
 
-    console.log(tr.stdout);
+    console.log(tr.stdout.replace(/%0A\s{2}/g, ''));
     if (!tr.succeeded) console.log(tr.stderr);
     assert.equal(tr.succeeded, true, 'should have succeeded');
     assert.equal(tr.errorIssues.length, 0, 'should have no errors');
@@ -25,16 +25,16 @@ describe('Google Cloud Memorystore', function suite() {
     done();
   });
 
-  it('Upgrade the instance', (done) => {
+  it('Update the app', (done) => {
     this.timeout(30 * 1000);
-    assert.equal(created, true, 'instance may be created first');
+    assert.equal(created, true, 'app may be created first');
 
-    const tp = path.join(__dirname, 'tests', 'upgrade.js');
+    const tp = path.join(__dirname, 'tests', 'update.js');
     const tj = path.join(__dirname, 'task.json');
     const tr = new ttm.MockTestRunner(tp, tj);
     tr.run();
 
-    console.log(tr.stdout);
+    console.log(tr.stdout.replace(/%0A\s{2}/g, ''));
     if (!tr.succeeded) console.log(tr.stderr);
     assert.equal(tr.succeeded, true, 'should have succeeded');
     assert.equal(tr.errorIssues.length, 0, 'should have no errors');
@@ -42,16 +42,16 @@ describe('Google Cloud Memorystore', function suite() {
     done();
   });
 
-  it('Failover the instance', (done) => {
+  it('Repair the app', (done) => {
     this.timeout(30 * 1000);
-    assert.equal(created, true, 'instance may be created first');
+    assert.equal(created, true, 'app may be created first');
 
-    const tp = path.join(__dirname, 'tests', 'failover.js');
+    const tp = path.join(__dirname, 'tests', 'repair.js');
     const tj = path.join(__dirname, 'task.json');
     const tr = new ttm.MockTestRunner(tp, tj);
     tr.run();
 
-    console.log(tr.stdout);
+    console.log(tr.stdout.replace(/%0A\s{2}/g, ''));
     if (!tr.succeeded) console.log(tr.stderr);
     assert.equal(tr.succeeded, true, 'should have succeeded');
     assert.equal(tr.errorIssues.length, 0, 'should have no errors');
@@ -59,16 +59,16 @@ describe('Google Cloud Memorystore', function suite() {
     done();
   });
 
-  it('Delete a instance', (done) => {
+  it('Create firewall rule', (done) => {
     this.timeout(30 * 1000);
-    assert.equal(created, true, 'instance may be created first');
+    assert.equal(created, true, 'app may be created first');
 
-    const tp = path.join(__dirname, 'tests', 'delete.js');
+    const tp = path.join(__dirname, 'tests', 'firewall.js');
     const tj = path.join(__dirname, 'task.json');
     const tr = new ttm.MockTestRunner(tp, tj);
     tr.run();
 
-    console.log(tr.stdout);
+    console.log(tr.stdout.replace(/%0A\s{2}/g, ''));
     if (!tr.succeeded) console.log(tr.stderr);
     assert.equal(tr.succeeded, true, 'should have succeeded');
     assert.equal(tr.errorIssues.length, 0, 'should have no errors');

@@ -69,7 +69,7 @@
         "create": "Create an app",
         "update": "Update an existing app",
         "repair": "Repair features for the app",
-        "firewall": "Create a firewall ingress rule",
+        "firewall": "Create firewall ingress rule",
         "service": "Create a service or a version",
         "delete-version": "Delete an existing version"
       }
@@ -139,10 +139,15 @@
     },
     {
       "name": "appCookieExp",
-      "type": "string",
-      "label": "Default cookie expiration (in seconds)",
-      "defaultValue": "",
+      "type": "radio",
+      "label": "Default cookie expiration",
+      "defaultValue": "86400s",
       "required": false,
+      "options": {
+        "86400s": "1 day",
+        "604800s": "1 week",
+        "1209600s": "2 weeks"
+      },
       "helpMarkDown": "Cookie expiration policy for this application. (Default: 1 day)",
       "visibleRule": "operation = create || operation = update"
     },
@@ -343,12 +348,51 @@
       "visibleRule": "appCustomCert = true && appCustomDNS = true"
     },
     {
+      "name": "fwRange",
+      "type": "string",
+      "label": "IP address or range, defined using CIDR notation",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "You can use the wildcard character `*` to match all IPs equivalent to `0/0` and `::/0` together. <br>Examples: `192.168.1.1` or `192.168.0.0/16` or `2001:db8::/32` or `2001:0db8:0000:0042:0000:8a2e:0370:7334`.<br><br>Truncation will be silently performed on addresses which are not properly truncated.<br>For example, `1.2.3.4/24` is accepted as the same address as `1.2.3.0/24`. Similarly, for IPv6, `2001:db8::1/32` is accepted as the same address as `2001:db8::/32`.",
+      "visibleRule": "operation = firewall"
+    },
+    {
+      "name": "fwPriority",
+      "type": "string",
+      "label": "Rule priority",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "A positive integer between [1, Int32.MaxValue-1] that defines the order of rule evaluation. Rules with the lowest priority are evaluated first.",
+      "visibleRule": "operation = firewall"
+    },
+    {
+      "name": "fwAction",
+      "type": "radio",
+      "label": "Action",
+      "defaultValue": "ALLOW",
+      "required": true,
+      "options": {
+        "DENY": "DENY",
+        "ALLOW": "ALLOW"
+      },
+      "visibleRule": "operation = firewall"
+    },
+    {
+      "name": "fwDescription",
+      "type": "string",
+      "label": "Rule description",
+      "defaultValue": "",
+      "required": false,
+      "visibleRule": "operation = firewall"
+    },
+    {
       "name": "waitOperation",
       "type": "boolean",
       "label": "Wait for long running operation",
       "defaultValue": false,
       "required": false,
-      "helpMarkDown": "If enabled, pipeline will wait until resource be modified, instead of just scheduling an operation."
+      "helpMarkDown": "If enabled, pipeline will wait until resource be modified, instead of just scheduling an operation.",
+      "visibleRule": "operation = create || operation = update || operation = repair"
     }
   ],
   "OutputVariables": [

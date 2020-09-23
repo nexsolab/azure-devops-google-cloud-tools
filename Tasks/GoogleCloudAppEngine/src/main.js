@@ -573,7 +573,7 @@ async function createApp(
     id: project,
     locationId: region,
     servingStatus,
-    defaultCookieExpiration: `${cookieExp}s`,
+    defaultCookieExpiration: cookieExp,
     gcrDomain,
     authDomain,
     databaseType,
@@ -637,14 +637,12 @@ async function updateApp(client, project, cookieExp, authDomain, currentApp) {
   taskLib.debug(`Changed or new properties of the existing app are: ${propertiesToArray(diff).join(',')}`);
   taskLib.debug(JSON.stringify(diff, null, 2));
 
-  // Get only changed props
-  const changedProps = deepDiff(currentApp, requestBody) || {};
-  const updateMask = propertiesToArray(changedProps).join(',');
+  const updateMask = propertiesToArray(diff).join(',');
   const qsMask = encodeURIComponent(updateMask);
   taskLib.debug(`Changed attributes are: ${updateMask}`);
 
   // Nothing changed
-  if (!diff || !updateMask) {
+  if (!diff && !updateMask) {
     console.log('Nothing was changed in the app.');
     return checkResultAndGetData({
       status: 200,
@@ -1167,7 +1165,7 @@ async function listDomainMappings(client, project) {
   }
 
   const result = checkResultAndGetData(res);
-  return result && result.domainMappings;
+  return Array.isArray(result.domainMappings) ? result.domainMappings : [];
 }
 
 /**
@@ -1229,7 +1227,66 @@ async function configureDomain(client, project, newApp = true, certificate = nul
 
   return domainMap;
 }
+
+/**
+ * @typedef {object} FirewallRule
+ * @property {('ALLOW'|'DENY')} action
+ * @property {string} range
+ * @property {string} description
+ * @property {number} priority
+ */
+
+/**
+ * Create a firewall ingress rule.
+ *
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {('ALLOW'|'DENY')} action The action to take on matched requests
+ * @param {string} sourceRange IP address or range, of requests that this rule applies to
+ * @param {string} description An optional string description of this rule
+ * @param {number} priority A positive integer between that defines the order of rule evaluation.
+ * @returns {FirewallRule} The created firewall rule.
+ */
+async function createRule(client, project, action, range, description, priority) {
+  const url = `apps/${project}/firewall/ingressRules`;
+  console.log('Creating firewall rule...');
+
+  /**
+   * @type {FirewallRule}
+   */
+  const requestBody = {
+    action,
+    sourceRange: range,
+    description,
+    priority,
+  };
+
+  taskLib.debug('Requesting GCP with data:');
+  taskLib.debug(JSON.stringify(requestBody, null, 2));
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'POST',
+      url: `${apiUrl}/${url}`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
 // #endregion AppOperations
+
+//#region ServiceOperations
+
+//#endregion ServiceOperations
 
 /**
  * Main function
@@ -1245,7 +1302,9 @@ async function main() {
     let result;
 
     // Get authentication
-    const auth = await getAuthenticatedClient([]);
+    const auth = await getAuthenticatedClient([
+      'https://www.googleapis.com/auth/appengine.admin',
+    ]);
 
     // Check operation and get the name
     const op = taskLib.getInput('operation', true);
@@ -1254,11 +1313,11 @@ async function main() {
       case 'create': {
         const region = taskLib.getInput('gcpRegion', true);
         let servingStatus = taskLib.getInput('appServingStatus', false) || 'serving';
-        const cookieExp = getNumberInput('appCookieExp', false) || 24 * 60 * 60; // 1d
+        const cookieExp = taskLib.getInput('appCookieExp', false) || '86400s'; // 1d
         const gcrDomain = taskLib.getInput('appGCRDomain', false);
         const authDomain = taskLib.getInput('appAuthDomain', false);
         let database = taskLib.getInput('appDatabase', false) || 'databaseTypeUnspecified';
-        const optimizedOS = taskLib.getBoolInput('appOptimizedOS', false) || false;
+        const optimizedOS = taskLib.getBoolInput('appOptimizedOS', false) || true;
         const iap = taskLib.getBoolInput('appIap', false) || false;
         const iapClientId = taskLib.getInput('appIapClientId', false);
         const iapClientSecret = taskLib.getInput('appIapClientSecret', false);
@@ -1301,7 +1360,7 @@ async function main() {
       }
 
       case 'update': {
-        const cookieExp = getNumberInput('appCookieExp', false) || 24 * 60 * 60; // 1d
+        const cookieExp = taskLib.getInput('appCookieExp', false) || '86400s'; // 1d
         const authDomain = taskLib.getInput('appAuthDomain', false);
 
         // Check current app metadata
@@ -1335,6 +1394,26 @@ async function main() {
 
       case 'repair': {
         result = await repairApp(auth.client, auth.projectId);
+        break;
+      }
+
+      case 'firewall': {
+        const action = taskLib.getInput('fwAction', false);
+        const desc = taskLib.getInput('fwDescription', false);
+        const range = taskLib.getInput('fwRange', false);
+        const priority = taskLib.getInput('fwPriority', false);
+
+        const rule = await createRule(auth.client, auth.projectId, action, range, desc, priority);
+        taskSuccess = rule && rule.range;
+
+        // Result expect an operation
+        result = {
+          done: true,
+          response: rule,
+          metadata: {
+            createTime: new Date().toUTCString(),
+          },
+        };
         break;
       }
 
