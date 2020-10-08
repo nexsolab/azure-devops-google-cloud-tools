@@ -75,4 +75,21 @@ describe('Google Cloud App Engine', function suite() {
 
     done();
   });
+
+  it('Delete a service', (done) => {
+    this.timeout(30 * 1000);
+    assert.equal(created, true, 'app may be created first');
+
+    const tp = path.join(__dirname, 'tests', 'delete.js');
+    const tj = path.join(__dirname, 'task.json');
+    const tr = new ttm.MockTestRunner(tp, tj);
+    tr.run();
+
+    console.log(tr.stdout.replace(/%0A\s{2}/g, ''));
+    if (!tr.succeeded) console.log(tr.stderr);
+    assert.equal(tr.succeeded, true, 'should have succeeded');
+    assert.equal(tr.errorIssues.length, 0, 'should have no errors');
+
+    done();
+  });
 });

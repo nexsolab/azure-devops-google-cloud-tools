@@ -1284,9 +1284,390 @@ async function createRule(client, project, action, range, description, priority)
 }
 // #endregion AppOperations
 
-//#region ServiceOperations
+// #region ServiceOperations
+/**
+ * Available inbound services.
+ * @readonly
+ * @enum {string}
+ */
+var enumInboundServiceType = {
+  /** Not specified. */
+  inboundServiceUnspecified: 'INBOUND_SERVICE_UNSPECIFIED',
+  /** Allows an application to receive mail. */
+  inboundServiceMail: 'INBOUND_SERVICE_MAIL',
+  /** Allows an application to receive email-bound notifications. */
+  inboundServiceMailBounce: 'INBOUND_SERVICE_MAIL_BOUNCE',
+  /** Allows an application to receive error stanzas. */
+  inboundServiceXmppError: 'INBOUND_SERVICE_XMPP_ERROR',
+  /** Allows an application to receive instant messages. */
+  inboundServiceXmppMessage: 'INBOUND_SERVICE_XMPP_MESSAGE',
+  /** Allows an application to receive user subscription POSTs. */
+  inboundServiceXmppSubscribe: 'INBOUND_SERVICE_XMPP_SUBSCRIBE',
+  /** Allows an application to receive a user's chat presence. */
+  inboundServiceXmppPresence: 'INBOUND_SERVICE_XMPP_PRESENCE',
+  /** Registers an application for notifications when a client connects or disconnects from a channel. */
+  inboundServiceChannelPresence: 'INBOUND_SERVICE_CHANNEL_PRESENCE',
+  /** Enables warmup requests. */
+  inboundServiceWarmup: 'INBOUND_SERVICE_WARMUP'
+};
 
-//#endregion ServiceOperations
+/**
+ * @typedef {object} Network
+ * @property {string[]} forwardedPorts List of ports, or port pairs, to forward from the virtual machine to the application container.
+ * @property {string} instanceTag Tag to apply to the instance during creation.
+ * @property {string} name Google Compute Engine network where the virtual machines are created.
+ * @property {string} subnetworkName Google Cloud Platform sub-network where the virtual machines are created.
+ * @property {boolean} sessionAffinity Enable session affinity.
+ */
+
+/**
+ * @typedef {object} Volume
+ * @property {string} name Unique name for the volume.
+ * @property {string} volumeType Underlying volume type, e.g. 'tmpfs'.
+ * @property {number} sizeGb Volume size in gigabytes.
+ */
+
+/**
+ * @typedef {object} Resources
+ * @property {number} cpu Number of CPU cores needed.
+ * @property {number} diskGb Disk size (GB) needed.
+ * @property {number} memoryGb Memory (GB) needed.
+ * @property {Volume[]} volumes User specified volumes.
+ */
+
+/**
+ * Methods to enforce security (HTTPS) on a URL.
+ * @readonly
+ * @enum {string}
+ */
+var enumSecurityLevel = {
+  /** Not specified. */
+  SECURE_UNSPECIFIED: 'SECURE_UNSPECIFIED',
+  /** Both HTTP and HTTPS requests with URLs that match the handler succeed without redirects. The application can examine the request to determine which protocol was used, and respond accordingly. */
+  SECURE_DEFAULT: 'SECURE_DEFAULT',
+  /** Requests for a URL that match this handler that use HTTPS are automatically redirected to the HTTP equivalent URL. */
+  SECURE_NEVER: 'SECURE_NEVER',
+  /** Both HTTP and HTTPS requests with URLs that match the handler succeed without redirects. The application can examine the request to determine which protocol was used and respond accordingly. */
+  SECURE_OPTIONAL: 'SECURE_OPTIONAL',
+  /** Requests for a URL that match this handler that do not use HTTPS are automatically redirected to the HTTPS URL with the same path. Query parameters are reserved for the redirect. */
+  SECURE_ALWAYS: 'SECURE_ALWAYS',
+};
+
+/**
+ * Methods to enforce security (HTTPS) on a URL.
+ * @readonly
+ * @enum {string}
+ */
+var enumLoginRequirement = {
+  /** Not specified. LOGIN_OPTIONAL is assumed. */
+  LOGIN_UNSPECIFIED: 'LOGIN_UNSPECIFIED',
+  /** Does not require that the user is signed in. */
+  LOGIN_OPTIONAL: 'LOGIN_OPTIONAL',
+  /** If the user is not signed in, the authFailAction is taken. In addition, if the user is not an administrator for the application, they are given an error message regardless of authFailAction. If the user is an administrator, the handler proceeds. */
+  LOGIN_ADMIN: 'LOGIN_ADMIN',
+  /** If the user has signed in, the handler proceeds normally. Otherwise, the authFailAction is taken. */
+  LOGIN_REQUIRED: 'LOGIN_REQUIRED',
+};
+
+/**
+ * Methods to enforce security (HTTPS) on a URL.
+ * @readonly
+ * @enum {string}
+ */
+var enumAuthFailAction = {
+  /** Not specified. AUTH_FAIL_ACTION_REDIRECT is assumed. */
+  AUTH_FAIL_ACTION_UNSPECIFIED: 'AUTH_FAIL_ACTION_UNSPECIFIED',
+  /** Redirects user to "accounts.google.com". The user is redirected back to the application URL after signing in or creating an account. */
+  AUTH_FAIL_ACTION_REDIRECT: 'AUTH_FAIL_ACTION_REDIRECT',
+  /** Rejects request with a 401 HTTP status code and an error message. */
+  AUTH_FAIL_ACTION_UNAUTHORIZED: 'AUTH_FAIL_ACTION_UNAUTHORIZED',
+};
+
+/**
+ * Methods to enforce security (HTTPS) on a URL.
+ * @readonly
+ * @enum {string}
+ */
+var enumRedirectHttpResponseCode = {
+  /** Not specified. 302 is assumed. */
+  REDIRECT_HTTP_RESPONSE_CODE_UNSPECIFIED: 'REDIRECT_HTTP_RESPONSE_CODE_UNSPECIFIED',
+  /** 301 Moved Permanently code. */
+  REDIRECT_HTTP_RESPONSE_CODE_301: 'REDIRECT_HTTP_RESPONSE_CODE_301',
+  /** 302 Moved Temporarily code. */
+  REDIRECT_HTTP_RESPONSE_CODE_302: 'REDIRECT_HTTP_RESPONSE_CODE_302',
+  /** 303 See Other code. */
+  REDIRECT_HTTP_RESPONSE_CODE_303: 'REDIRECT_HTTP_RESPONSE_CODE_303',
+  /** 307 Temporary Redirect code. */
+  REDIRECT_HTTP_RESPONSE_CODE_307: 'REDIRECT_HTTP_RESPONSE_CODE_307',
+};
+
+/**
+ * @typedef {object} StaticFilesHandler Files served directly to the user for a given URL, such as images, CSS stylesheets, or JavaScript source files.
+ * @property {string} path Path to the static files matched by the URL pattern, from the application root directory.
+ * @property {string} uploadPathRegex Regular expression that matches the file paths for all files that should be referenced by this handler.
+ * @property {object} httpHeaders HTTP headers to use for all responses from these URLs.
+ * @property {string} mimeType MIME type used to serve all files served by this handler.
+ * @property {string} expiration Time a static file served by this handler should be cached by web proxies and browsers.
+ * @property {boolean} requireMatchingFile Whether this handler should match the request if the file referenced by the handler does not exist.
+ * @property {boolean} applicationReadable Whether files should also be uploaded as code data.
+ */
+
+/**
+ * @typedef {object} ScriptHandler Executes a script to handle the request that matches the URL pattern.
+ * @property {string} scriptPath Path to the script from the application root directory.
+ */
+
+/**
+ * @typedef {object} ApiEndpointHandler Uses Google Cloud Endpoints to handle requests.
+ * @property {string} scriptPath Path to the script from the application root directory.
+ */
+
+/**
+ * @typedef {object} UrlMap URL pattern and description of how the URL should be handled.
+ * @property {string} urlRegex URL prefix. Uses regular expression syntax, which means regexp special characters must be escaped, but should not contain groupings. 
+ * @property {enumSecurityLevel} securityLevel Security (HTTPS) enforcement for this URL.
+ * @property {enumLoginRequirement} login Level of login required to access this resource.
+ * @property {enumAuthFailAction} authFailAction Action to take when users access resources that require authentication.
+ * @property {enumRedirectHttpResponseCode} redirectHttpResponseCode 30x code to use when performing redirects for the secure field.
+ * @property {StaticFilesHandler} staticFiles Returns the contents of a file, such as an image, as the response.
+ * @property {ScriptHandler} script Executes a script to handle the requests that match this URL pattern.
+ * @property {ApiEndpointHandler} apiEndpoint Uses API Endpoints to handle requests.
+ */
+
+/**
+ * @typedef {object} ServiceVersion
+ * @property {string} name Full path to the Version resource in the API.
+ * @property {string} id Relative name of the version within the service. Example: `v1`.
+ * @property {enumInboundServiceType[]} inboundServices Before an application can receive email or XMPP messages, the application must be configured to enable the service.
+ * @property {string} instanceClass Instance class that is used to run this version.
+ * @property {Network} network Extra network settings.
+ * @property {Resources} resources Machine resources for this version. 
+ * @property {string} runtime Desired runtime.
+ * @property {string} runtimeChannel The channel of the runtime to use. 
+ * @property {boolean} threadsafe Whether multiple requests can be dispatched to this version at once.
+ * @property {boolean} vm hether to deploy this version in a container on a virtual machine.
+ * @property {object} betaSettings Metadata settings that are supplied to this version to enable beta runtime features.
+ * @property {string} env App Engine execution environment for this version.
+ * @property {('SERVING'|'STOPPED')} servingStatus Current serving status of this version. 
+ * @property {string} createdBy Email address of the user who created this version.
+ * @property {string} createTime Time that this version was created.
+ * @property {string} diskUsageBytes Total size in bytes of all the files that are included in this version and currently hosted on the App Engine disk.
+ * @property {string} runtimeApiVersion The version of the API in the given runtime environment.
+ * @property {string} runtimeMainExecutablePath The path or name of the app's main executable.
+ * @property {UrlMap[]} handlers An ordered list of URL-matching patterns that should be applied to incoming requests.
+ * @property {ErrorHandler[]} errorHandlers Custom static error pages. Limited to 10KB per page.
+ * @property {Library[]} libraries Configuration for third-party Python runtime libraries that are required by the application.
+ * @property {ApiConfigHandler} apiConfig Serving configuration for Google Cloud Endpoints.
+ * @property {object} envVariables Environment variables available to the application.
+ * @property {string} defaultExpiration Duration that static files should be cached by web proxies and browsers.
+ * @property {HealthCheck} healthCheck Configures health checking for instances.
+ * @property {ReadinessCheck} readinessCheck Configures readiness health checking for instances.
+ * @property {LivenessCheck} livenessCheck Configures liveness health checking for instances.
+ * @property {string} nobuildFilesRegex Files that match this pattern will not be built into this version. 
+ * @property {Deployment} deployment Code and application artifacts that make up this version.
+ * @property {string} versionUrl Serving URL for this version.
+ * @property {EndpointsApiService} endpointsApiService Cloud Endpoints configuration.
+ * @property {Entrypoint} entrypoint The entrypoint for the application.
+ * @property {VpcAccessConnector} vpcAccessConnector Enables VPC connectivity for standard apps.
+ * @property {AutomaticScaling} automaticScaling Automatic scaling is based on request rate, response latencies, and other application metrics.
+ * @property {BasicScaling} basicScaling A service with basic scaling will create an instance when the application receives a request.
+ * @property {ManualScaling} manualScaling A service with manual scaling runs continuously, allowing you to perform complex initialization and rely on the state of its memory over time.
+*/
+
+/**
+ * Get the app configuration
+ *
+ * @author Gabriel Anderson
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {string} service Service name
+ * @param {string} version Version name (id)
+ * @returns {ServiceVersion} The API result data
+ */
+async function getService(client, project, service, version) {
+  const url = `apps/${project}/services/${service}/versions/${version}`;
+  console.log(`Check existence of ${url}...`);
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'GET',
+      url: `${apiUrl}/${url}`,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+  } catch (error) {
+    if (error.code === 404) return null;
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  return res && res.data;
+}
+
+/**
+ * Create a new service or a new version to an existing service.
+ *
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {ServiceVersion} service The service configuration to implement
+ * @returns {Operation} The operation metadata.
+ */
+async function createServiceVersion(
+  client, project, ...service
+) {
+  const url = `apps/${project}/services/${service}/versions`;
+  console.log(`Creating service ${project}...`);
+
+  const requestBody = {
+    id: project,
+    locationId: region,
+    servingStatus,
+    defaultCookieExpiration: cookieExp,
+    gcrDomain,
+    authDomain,
+    databaseType,
+    featureSettings: {
+      useContainerOptimizedOs: optimizedOs,
+    },
+    iap: {
+      enabled: iap,
+      oauth2ClientId: clientId,
+      oauth2ClientSecret: clientSecret,
+    },
+    dispatchRules: [],
+  };
+
+  taskLib.debug('Requesting GCP with data:');
+  taskLib.debug(JSON.stringify(requestBody, null, 2));
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'POST',
+      url: `${apiUrl}/${url}`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  } catch (error) {
+    const result = error.response.data;
+    console.error(JSON.stringify(result));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+
+/**
+ * Update the existing instance of Redis service (Cloud Memorystore)
+ *
+ * @author Gabriel Anderson
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {number} cookieExp Time in seconds to expire the cookie
+ * @param {string} authDomain Google Apps authentication domain that controls which users can access
+ * @param {object} currentApp The current app metadata
+ * @returns {Operation} The operation metadata.
+ */
+async function updateApp(client, project, cookieExp, authDomain, currentApp) {
+  const url = `apps/${project}`;
+  console.log(`Updating app ${url}`);
+
+  // New
+  const requestBody = {
+    defaultCookieExpiration: cookieExp,
+    authDomain,
+  };
+
+  // Get only the differences, including new props
+  const diff = deepDiff(currentApp, requestBody, true);
+  taskLib.debug(`Changed or new properties of the existing app are: ${propertiesToArray(diff).join(',')}`);
+  taskLib.debug(JSON.stringify(diff, null, 2));
+
+  const updateMask = propertiesToArray(diff).join(',');
+  const qsMask = encodeURIComponent(updateMask);
+  taskLib.debug(`Changed attributes are: ${updateMask}`);
+
+  // Nothing changed
+  if (!diff && !updateMask) {
+    console.log('Nothing was changed in the app.');
+    return checkResultAndGetData({
+      status: 200,
+      data: {
+        name: 'none',
+        metadata: {},
+        done: true,
+      },
+    });
+  }
+
+  // Update
+  let res;
+  try {
+    res = await client.request({
+      method: 'PATCH',
+      url: `${apiUrl}/${url}?updateMask=${qsMask}`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  } catch (error) {
+    const result = error.response.data;
+
+    // Already exists, just show a warning
+    if (result.error && result.error.code === 409) {
+      console.log(`[!] The app ${url} already exists.`);
+      return {
+        data: {
+          ...requestBody,
+          name: url,
+        },
+        id: 1,
+      };
+    }
+
+    console.error(JSON.stringify(result));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+
+/**
+ * Delete an existing service.
+ *
+ * @param {OAuth2Client} client Google Auth Client
+ * @param {string} project The GCP Project ID
+ * @param {string} service The service name
+ * @returns {Operation} The operation result.
+ */
+async function deleteService(client, project, service) {
+  const url = `apps/${project}/services/${service}`;
+  console.log(`Deleting service ${url}...`);
+
+  let res;
+  try {
+    res = await client.request({
+      method: 'DELETE',
+      url: `${apiUrl}/${url}`,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(JSON.stringify(error.response.data));
+    throw error;
+  }
+
+  return checkResultAndGetData(res);
+}
+// #endregion ServiceOperations
 
 /**
  * Main function
@@ -1398,9 +1779,9 @@ async function main() {
       }
 
       case 'firewall': {
-        const action = taskLib.getInput('fwAction', false);
-        const desc = taskLib.getInput('fwDescription', false);
-        const range = taskLib.getInput('fwRange', false);
+        const action = taskLib.getInput('fwAction', false) || 'ALLOW';
+        const desc = taskLib.getInput('fwDescription', false) || '';
+        const range = taskLib.getInput('fwRange', true);
         const priority = taskLib.getInput('fwPriority', false);
 
         const rule = await createRule(auth.client, auth.projectId, action, range, desc, priority);
@@ -1414,6 +1795,12 @@ async function main() {
             createTime: new Date().toUTCString(),
           },
         };
+        break;
+      }
+
+      case 'delete': {
+        const service = taskLib.getInput('svcName', true);
+        result = await deleteService(auth.client, auth.projectId, service);
         break;
       }
 
