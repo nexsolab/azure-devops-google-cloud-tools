@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "azure-devops-google-cloud-tools",
   "publisher": "nexso",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "name": "Google Cloud Tools",
   "scopes": ["vso.build", "vso.build_execute", "vso.release"],
   "description": "Deploy code and create: Apps, Functions, Redis instances, PubSub topics and subscriptions, manage DNS records and Google Cloud resources or use the gcloud CLI.",
@@ -114,6 +114,15 @@
       "properties": {
         "name": "Tasks/GoogleCloudMemorystore"
       }
+    },
+    {
+      "id": "GoogleCloudAppEngine",
+      "description": "Manage Apps in GCP App Engine",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": {
+        "name": "Tasks/GoogleCloudAppEngine"
+      }
     }
   ],
   "links": {
@@ -166,6 +175,9 @@
     },
     {
       "path": "Tasks/GoogleCloudMemorystore"
+    },
+    {
+      "path": "Tasks/GoogleCloudAppEngine"
     }
   ]
 }
