@@ -121,7 +121,7 @@ async function acquireCloudSdk(version: string): Promise<string> {
     //
     version = toolLib.cleanVersion(version);
     
-    const baseUrl: string = 'https://storage.googleapis.com/cloud-sdk-release/';
+    const baseUrl: string = 'https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/';
     let dataFileName: string;
     switch (osPlat) {
         case "linux": dataFileName = "linux-" + osArch + '.tar.gz'; break;
