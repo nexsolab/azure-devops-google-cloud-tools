@@ -58,8 +58,8 @@ tmr.registerMock('azure-pipelines-tool-lib/tool', {
     },
     downloadTool(url) {
         var arch = os.arch() === 'x64' ? 'x86_64' : 'x86';
-        if (url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-283.0.0-windows-${arch}.zip` ||
-            url === `https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-283.0.0-${os.platform()}-${arch}.tar.gz`) {
+        if (url === `https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-283.0.0-windows-${arch}.zip` ||
+            url === `https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-283.0.0-${os.platform()}-${arch}.tar.gz`) {
             return 'location';
         }
         else {

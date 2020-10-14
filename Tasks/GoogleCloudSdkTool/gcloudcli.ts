@@ -121,7 +121,7 @@ async function acquireCloudSdk(version: string): Promise<string> {
     //
     version = toolLib.cleanVersion(version);
     
-    const baseUrl: string = 'https://storage.googleapis.com/cloud-sdk-release/';
+    const baseUrl: string = 'https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/';
     let dataFileName: string;
     switch (osPlat) {
         case "linux": dataFileName = "linux-" + osArch + '.tar.gz'; break;
@@ -130,7 +130,7 @@ async function acquireCloudSdk(version: string): Promise<string> {
         default: throw new Error(`Unexpected OS '${osPlat}'`);
     }
 
-    // https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-283.0.0-linux-x86_64.tar.gz
+    // https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-283.0.0-linux-x86_64.tar.gz
     let downloadUrl = baseUrl + 'google-cloud-sdk-' + version + '-' + dataFileName;
     let downloadPath: string = await toolLib.downloadTool(downloadUrl);
     
