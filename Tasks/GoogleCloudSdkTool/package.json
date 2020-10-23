@@ -39,7 +39,7 @@
   "dependencies": {
     "azure-pipelines-task-lib": "^2.9.3",
     "azure-pipelines-tool-lib": "^0.13.2",
-    "typed-rest-client": "^1.7.2"
+    "typed-rest-client": "^1.7.3"
   },
   "devDependencies": {
     "@types/mocha": "^7.0.2",
