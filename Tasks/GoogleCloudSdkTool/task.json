@@ -12,8 +12,8 @@
   ],
   "author": "Gabriel Anderson",
   "version": {
-    "Major": 0,
-    "Minor": 5,
+    "Major": 1,
+    "Minor": 0,
     "Patch": 1
   },
   "satisfies": [
@@ -28,7 +28,7 @@
       "name": "versionSpec",
       "type": "string",
       "label": "Version Spec",
-      "defaultValue": "304.x",
+      "defaultValue": "315.x",
       "required": true,
       "helpMarkDown": "Version Spec of version to get.  Examples: 252.x, 143.0.1, >=280.0.0"
     },
