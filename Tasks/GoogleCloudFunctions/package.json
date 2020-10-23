@@ -39,7 +39,7 @@
   "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions#readme",
   "dependencies": {
     "azure-pipelines-task-lib": "^2.11.1",
-    "google-auth-library": "^6.0.5",
+    "google-auth-library": "^6.1.0",
     "node-fetch": "^2.6.1",
     "return-deep-diff": "^0.4.0",
     "securefiles-babel": "file:../Common/securefiles-babel"
