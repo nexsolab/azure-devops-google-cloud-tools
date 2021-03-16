@@ -40,7 +40,7 @@
   "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS#readme",
   "dependencies": {
     "azure-pipelines-task-lib": "^2.11.1",
-    "google-auth-library": "^6.0.4",
+    "google-auth-library": "^6.1.0",
     "securefiles-babel": "file:../Common/securefiles-babel"
   },
   "babel": {
