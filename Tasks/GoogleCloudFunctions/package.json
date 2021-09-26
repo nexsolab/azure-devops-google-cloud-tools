@@ -38,9 +38,9 @@
   },
   "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudFunctions#readme",
   "dependencies": {
-    "azure-pipelines-task-lib": "^2.11.1",
-    "google-auth-library": "^6.1.0",
-    "node-fetch": "^2.6.1",
+    "azure-pipelines-task-lib": "file:../../azure-pipelines-task-lib-2.12.2.tgz",
+    "google-auth-library": "^6.1.6",
+    "node-fetch": "^2.6.5",
     "return-deep-diff": "^0.4.0",
     "securefiles-babel": "file:../Common/securefiles-babel"
   },
@@ -64,13 +64,13 @@
     }
   },
   "devDependencies": {
-    "@babel/cli": "^7.10.5",
-    "@babel/core": "^7.10.5",
-    "@babel/node": "^7.10.5",
-    "@babel/polyfill": "^7.10.4",
-    "@babel/preset-env": "^7.10.4",
+    "@babel/cli": "^7.15.7",
+    "@babel/core": "^7.15.5",
+    "@babel/node": "^7.15.4",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.15.6",
     "babel-eslint": "^10.1.0",
-    "dotenv": "^8.2.0",
+    "dotenv": "^8.6.0",
     "esm": "^3.2.25"
   }
 }

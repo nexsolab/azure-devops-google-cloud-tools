@@ -37,7 +37,7 @@
   },
   "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools#readme",
   "dependencies": {
-    "azure-pipelines-task-lib": "^2.9.3",
+    "azure-pipelines-task-lib": "file:../../azure-pipelines-task-lib-2.12.2.tgz",
     "azure-pipelines-tool-lib": "^0.13.2",
     "typed-rest-client": "^1.8.0"
   },
