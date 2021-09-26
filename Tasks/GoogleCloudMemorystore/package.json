@@ -43,8 +43,8 @@
   },
   "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudPubSub#readme",
   "dependencies": {
-    "azure-pipelines-task-lib": "^2.9.6",
-    "google-auth-library": "^6.0.5",
+    "azure-pipelines-task-lib": "file:../../azure-pipelines-task-lib-2.12.2.tgz",
+    "google-auth-library": "^6.1.6",
     "return-deep-diff": "^0.4.0",
     "securefiles-babel": "file:../Common/securefiles-babel"
   },
@@ -68,11 +68,11 @@
     }
   },
   "devDependencies": {
-    "@babel/cli": "^7.10.5",
-    "@babel/core": "^7.10.5",
-    "@babel/node": "^7.10.5",
-    "@babel/polyfill": "^7.10.4",
-    "@babel/preset-env": "^7.10.4",
+    "@babel/cli": "^7.15.7",
+    "@babel/core": "^7.15.5",
+    "@babel/node": "^7.15.4",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.15.6",
     "babel-eslint": "^10.1.0"
   }
 }
