@@ -1,0 +1,63 @@
+# Agent Queue 'Azure Pipelines' was used with unrecognized Agent Specification, vmImage property must be specified to determine image - https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml#software
+trigger:
+  branches:
+    include:
+    - refs/heads/master
+    - refs/heads/dev
+
+jobs:
+- job: BuildAndAnalyze
+  displayName: Build and Analyze
+  pool:
+    name: Azure Pipelines
+  steps:
+    - checkout: self
+      clean: true
+      fetchTags: true
+
+    - task: NodeTool@0
+      displayName: 'Use Node 22.x'
+      inputs:
+        versionSpec: 22.x
+    
+    - task: Npm@1
+      displayName: 'npm ci'
+      inputs:
+        command: ci
+        verbose: false
+
+    - task: CopyFiles@2
+      displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+      inputs:
+        Contents: |
+          *
+          !.*
+          images/**
+        TargetFolder: $(Build.ArtifactStagingDirectory)
+
+    - task: SonarCloudPrepare@3
+      displayName: Prepare analysis on SonarCloud
+      inputs:
+        SonarCloud: 512db82f-0609-4f57-ad7d-750b1e32616b
+        organization: nexso
+        scannerMode: CLI
+        configMode: manual
+        cliProjectKey: azure-devops-google-cloud-tools
+        projectKey: azure-devops-google-cloud-tools
+        cliSources: $(Build.ArtifactStagingDirectory)
+
+    - task: SonarCloudAnalyze@3
+      displayName: Run Code Analysis
+      inputs:
+        jdkversion: JAVA_HOME_21_X64
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Pipeline Artifact
+      inputs:
+        path: $(Build.ArtifactStagingDirectory)
+        artifactName: ext
+
+    - task: SonarCloudPublish@3
+      displayName: Publish Quality Gate Result
+      inputs:
+        pollingTimeoutSec: 300

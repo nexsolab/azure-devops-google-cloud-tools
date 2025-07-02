@@ -1,17 +1,67 @@
 {
-    "env": {
-        "es6": true,
-        "node": true
+  "env": {
+    "node": true,
+    "es2022": true,
+    "mocha": true
+  },
+  "extends": [
+    "airbnb-base"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-console": "off",
+    "import/extensions": ["error", "ignorePackages"],
+    "import/no-unresolved": ["error", {
+      "ignore": ["^azure-pipelines-task-lib", "^azure-pipelines-tool-lib", "^vss-web-extension-sdk"]
+    }],
+    "max-len": ["error", {
+      "code": 120,
+      "tabWidth": 2,
+      "ignoreComments": true,
+      "ignoreTemplateLiterals": true,
+      "ignoreStrings": true
+    }],
+    "no-param-reassign": ["error", {
+      "props": false
+    }],
+    "prefer-destructuring": ["error", {
+      "array": false,
+      "object": true
+    }],
+    "class-methods-use-this": "off",
+    "no-underscore-dangle": ["error", {
+      "allow": ["_"]
+    }],
+    "import/prefer-default-export": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts"],
+      "extends": [
+        "airbnb-base",
+        "airbnb-typescript/base"
+      ],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "project": "./tsconfig.json"
+      },
+      "plugins": ["@typescript-eslint"],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": ["error", {
+          "argsIgnorePattern": "^_"
+        }]
+      }
     },
-    "extends": "airbnb-base",
-    "globals": {
-        "Atomics": "readonly",
-        "SharedArrayBuffer": "readonly"
-    },
-    "parserOptions": {
-        "ecmaVersion": 2018,
-        "sourceType": "module"
-    },
-    "rules": {
+    {
+      "files": ["**/tests/**/*", "**/*.test.js", "**/*.test.ts"],
+      "rules": {
+        "func-names": "off",
+        "object-shorthand": "off",
+        "prefer-arrow-callback": "off"
+      }
     }
+  ]
 }

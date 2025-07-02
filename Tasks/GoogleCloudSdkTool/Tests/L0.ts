@@ -3,74 +3,72 @@ import path = require('path');
 import * as ttm from 'azure-pipelines-task-lib/mock-test';
 
 describe('CloudSdkTool Suite', function () {
-    this.timeout(60000);
+  this.timeout(60000);
 
-    function runValidations(validator: () => void, tr, done) {
-        try {
-            validator();
-            done();
-        }
-        catch (error) {
-            console.log("STDERR", tr.stderr);
-            console.log("STDOUT", tr.stdout);
-            done(error);
-        }
+  function runValidations(validator: () => void, tr, done) {
+    try {
+      validator();
+      done();
+    } catch (error) {
+      console.log('STDERR', tr.stderr);
+      console.log('STDOUT', tr.stdout);
+      done(error);
     }
+  }
 
-    it('Succeeds when the first download is available', (done: MochaDone) => {
-        this.timeout(5000);
+  it('Succeeds when the first download is available', (done: MochaDone) => {
+    this.timeout(5000);
 
-        let tp: string = path.join(__dirname, 'L0FirstDownloadSuccess.js');
-        let tr: ttm.MockTestRunner = new ttm.MockTestRunner(tp);
+    const tp: string = path.join(__dirname, 'L0FirstDownloadSuccess.js');
+    const tr: ttm.MockTestRunner = new ttm.MockTestRunner(tp);
 
-        tr.run();
+    tr.run();
 
-        runValidations(() => {
-            assert(tr.succeeded, 'CloudSdkTool should have succeeded.');
-            assert(tr.stderr.length === 0, 'CloudSdkTool should not have written to stderr');
-        }, tr, done);
-    });
+    runValidations(() => {
+      assert(tr.succeeded, 'CloudSdkTool should have succeeded.');
+      assert(tr.stderr.length === 0, 'CloudSdkTool should not have written to stderr');
+    }, tr, done);
+  });
 
-    it('Succeeds when the second download is available', (done: MochaDone) => {
-        this.timeout(5000);
+  it('Succeeds when the second download is available', (done: MochaDone) => {
+    this.timeout(5000);
 
-        let tp: string = path.join(__dirname, 'L0SecondDownloadSuccess.js');
-        let tr: ttm.MockTestRunner = new ttm.MockTestRunner(tp);
+    const tp: string = path.join(__dirname, 'L0SecondDownloadSuccess.js');
+    const tr: ttm.MockTestRunner = new ttm.MockTestRunner(tp);
 
-        tr.run();
+    tr.run();
 
-        runValidations(() => {
-            assert(tr.succeeded, 'CloudSdkTool should have succeeded.');
-            assert(tr.stderr.length === 0, 'CloudSdkTool should not have written to stderr');
-        }, tr, done);
-    });
+    runValidations(() => {
+      assert(tr.succeeded, 'CloudSdkTool should have succeeded.');
+      assert(tr.stderr.length === 0, 'CloudSdkTool should not have written to stderr');
+    }, tr, done);
+  });
 
-    it('Succeeds when the third download is available', (done: MochaDone) => {
-        this.timeout(5000);
+  it('Succeeds when the third download is available', (done: MochaDone) => {
+    this.timeout(5000);
 
-        let tp: string = path.join(__dirname, 'L0ThirdDownloadSuccess.js');
-        let tr: ttm.MockTestRunner = new ttm.MockTestRunner(tp);
+    const tp: string = path.join(__dirname, 'L0ThirdDownloadSuccess.js');
+    const tr: ttm.MockTestRunner = new ttm.MockTestRunner(tp);
 
-        tr.run();
+    tr.run();
 
-        runValidations(() => {
-            assert(tr.succeeded, 'CloudSdkTool should have succeeded.');
-            assert(tr.stderr.length === 0, 'CloudSdkTool should not have written to stderr');
-        }, tr, done);
-    });
+    runValidations(() => {
+      assert(tr.succeeded, 'CloudSdkTool should have succeeded.');
+      assert(tr.stderr.length === 0, 'CloudSdkTool should not have written to stderr');
+    }, tr, done);
+  });
 
-    it('Removes "v" prefixes when evaluating latest version', (done: MochaDone) => {
-        this.timeout(5000);
+  it('Removes "v" prefixes when evaluating latest version', (done: MochaDone) => {
+    this.timeout(5000);
 
-        let tp: string = path.join(__dirname, 'L0GetsLatestVersion.js');
-        let tr: ttm.MockTestRunner = new ttm.MockTestRunner(tp);
+    const tp: string = path.join(__dirname, 'L0GetsLatestVersion.js');
+    const tr: ttm.MockTestRunner = new ttm.MockTestRunner(tp);
 
-        tr.run();
+    tr.run();
 
-        runValidations(() => {
-            assert(tr.succeeded, 'CloudSdkTool should have succeeded.');
-            assert(tr.stderr.length === 0, 'CloudSdkTool should not have written to stderr');
-        }, tr, done);
-    });
-
+    runValidations(() => {
+      assert(tr.succeeded, 'CloudSdkTool should have succeeded.');
+      assert(tr.stderr.length === 0, 'CloudSdkTool should not have written to stderr');
+    }, tr, done);
+  });
 });

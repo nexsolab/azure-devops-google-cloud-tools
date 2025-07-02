@@ -1,14 +1,27 @@
 {
   "name": "azure-devops-google-cloud-tools",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Google Cloud tasks for Azure DevOps Pipelines, like install CLI and deploy to App Services",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "mocha test --reporter mocha-junit-reporter",
+    "build": "vite build",
+    "build:tasks": "npm run build:dns && npm run build:functions && npm run build:memorystore && npm run build:pubsub && npm run build:sdk",
+    "build:dns": "vite build --config vite.config.dns.js",
+    "build:functions": "vite build --config vite.config.functions.js",
+    "build:memorystore": "vite build --config vite.config.memorystore.js",
+    "build:pubsub": "vite build --config vite.config.pubsub.js",
+    "build:sdk": "vite build --config vite.config.sdk.js",
+    "dev": "vite",
+    "lint": "eslint . --ext .js,.ts --fix",
+    "lint:check": "eslint . --ext .js,.ts",
     "create": "tfx extension create --manifest-globs vss-extension.json",
-    "createv": "tfx extension create --manifest-globs vss-extension.json --rev-version",
+    "create:versioned": "tfx extension create --manifest-globs vss-extension.json --rev-version",
     "share": "tfx extension publish --manifest-globs vss-extension.json --rev-version --share-with nexsobr",
-    "valid": "tfx extension isvalid --manifest-globs vss-extension.json"
+    "validate": "tfx extension isvalid --manifest-globs vss-extension.json",
+    "update:deps": "npm update && npm run update:tasks:deps",
+    "update:tasks:deps": "cd Tasks/GoogleCloudDNS && npm update && cd ../GoogleCloudFunctions && npm update && cd ../GoogleCloudMemorystore && npm update && cd ../GoogleCloudPubSub && npm update && cd ../GoogleCloudSdkTool && npm update"
   },
   "repository": {
     "type": "git",
@@ -42,9 +55,18 @@
     "vss-web-extension-sdk": "^5.141.0"
   },
   "devDependencies": {
-    "eslint": "^6.8.0",
-    "eslint-config-airbnb-base": "^14.2.0",
-    "eslint-plugin-import": "^2.22.0",
-    "sync-request": "^6.1.0"
+    "@types/node": "^22.16.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "mocha": "^10.2.0",
+    "mocha-junit-reporter": "^2.2.1",
+    "terser": "^5.43.1",
+    "typescript": "^5.3.0",
+    "vite": "^4.5.0",
+    "vite-plugin-node": "^3.0.0"
   }
 }

@@ -2,10 +2,10 @@
   "name": "googlecloudmemorystore",
   "version": "1.0.0",
   "description": "Manage Google Cloud Memorystore instances",
-  "main": "main.js",
+  "main": "dist/main.cjs",
   "scripts": {
-    "test": "mocha ./**/main.test.js",
-    "build": "npx babel src --out-dir dist --copy-files --ignore node_modules/**/*"
+    "build": "npm run --prefix=../.. build:memorystore",
+    "test": "mocha ./**/main.test.js"
   },
   "repository": {
     "type": "git",

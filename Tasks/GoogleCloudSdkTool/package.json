@@ -2,11 +2,11 @@
   "name": "googlecloudsdktool",
   "version": "1.0.0",
   "description": "Google Cloud SDK tool installer",
-  "main": "gcloudcli.js",
+  "main": "dist/main.cjs",
   "scripts": {
-    "test": "mocha **/L0.js",
-    "testci": "mocha **/L0.js --reporter mocha-junit-reporter",
-    "build": "tsc --project tsconfig.json"
+    "build": "npm run --prefix=../.. build:sdk",
+    "test": "mocha **/L0.ts",
+    "testci": "mocha **/L0.ts --reporter mocha-junit-reporter"
   },
   "repository": {
     "type": "git",

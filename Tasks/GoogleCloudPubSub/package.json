@@ -2,10 +2,10 @@
   "name": "googlecloudpubsub",
   "version": "1.0.0",
   "description": "Create GCP PubSub topics and subscribe to them",
-  "main": "main.js",
+  "main": "dist/main.cjs",
   "scripts": {
-    "test": "mocha ./**/main.test.js",
-    "build": "npx babel src --out-dir dist --copy-files --ignore node_modules/**/*"
+    "build": "npm run --prefix=../.. build:pubsub",
+    "test": "mocha ./**/main.test.js"
   },
   "repository": {
     "type": "git",

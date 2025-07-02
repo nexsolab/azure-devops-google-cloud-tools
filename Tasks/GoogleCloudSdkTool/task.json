@@ -42,8 +42,8 @@
     }
   ],
   "execution": {
-    "Node": {
-      "target": "gcloudcli.js",
+    "Node16": {
+      "target": "dist/main.cjs",
       "argumentFormat": ""
     }
   },

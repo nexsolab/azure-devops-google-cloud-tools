@@ -1,9 +1,10 @@
-![Build status](https://dev.azure.com/nexsobr/nx-team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.BaseExtension) ![Release status](https://vsrm.dev.azure.com/nexsobr/_apis/public/Release/badge/7c7f8052-bec7-4f7d-b267-22a6f7da4a37/5/5) 
+![Build status](https://dev.azure.com/nexsobr/nx-team/_apis/build/status/Tools/External/AzureDevOps.GoogleCloudTools.BaseExtension) ![Release status](https://vsrm.dev.azure.com/nexsobr/_apis/public/Release/badge/7c7f8052-bec7-4f7d-b267-22a6f7da4a37/5/5)
 
 # Google Cloud Tools
 
-Google Cloud Platform (GCP) tasks for Azure DevOps Pipelines
-_(work in progress)._
+Google Cloud Platform (GCP) tasks for Azure DevOps Pipelines.
+
+Modern, optimized Azure DevOps extension for managing Google Cloud Platform resources directly from your CI/CD pipelines.
 
 ## Tasks
 
@@ -15,13 +16,15 @@ _(work in progress)._
 | [<img src="images/icons/memorystore.png" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudMemorystore) | **[Google Cloud Memorystore](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudMemorystore)**<br>Create, delete, failover or upgrade Redis instances. |
 | [<img src="images/icons/dns.png" height="48">](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS) | **[Manage DNS records](https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS)**<br>Add, remove or get the value of the record sets for managed zones. |
 
-### Next:
+### Next
+
 - **Deploy and manage App Service and Service Endpoints**
 - **Google Cloud PubSub Lite**
 - **Deploy resources through "Equivalent REST" - JSON deploy file**
 
-## How to install extension
-Search for "Google Cloud" when adding a new task or go to theAzure DevOps Marketplace and install [**Google Cloud Tools** extension](https://marketplace.visualstudio.com/items?itemName=nexso.azure-devops-google-cloud-tools).
+## How to Install Extension
+
+Search for "Google Cloud" when adding a new task, or go to the Azure DevOps Marketplace and install the [**Google Cloud Tools** extension](https://marketplace.visualstudio.com/items?itemName=nexso.azure-devops-google-cloud-tools).
 
 ## Service Connection
 

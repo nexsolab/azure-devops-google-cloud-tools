@@ -1,12 +1,16 @@
 {
   "name": "googleclouddns",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Manage Google Cloud DNS regions and records",
-  "main": "index.js",
+  "main": "dist/main.js",
+  "type": "module",
   "scripts": {
     "test": "mocha ./src/main.test.js",
-    "testlocal": "mocha -r esm -r dotenv/config ./src/main.test.js",
-    "build": "npx babel src --out-dir dist --copy-files --no-copy-ignored --ignore node_modules/**/*"
+    "test:local": "mocha -r dotenv/config ./src/main.test.js",
+    "build": "vite build --config ../../vite.config.dns.js",
+    "dev": "vite build --config ../../vite.config.dns.js --watch",
+    "lint": "eslint src --ext .js --fix",
+    "lint:check": "eslint src --ext .js"
   },
   "repository": {
     "type": "git",
@@ -39,35 +43,12 @@
   },
   "homepage": "https://github.com/nexsolab/azure-devops-google-cloud-tools/tree/master/Tasks/GoogleCloudDNS#readme",
   "dependencies": {
-    "azure-pipelines-task-lib": "file:../../azure-pipelines-task-lib-2.12.2.tgz",
-    "google-auth-library": "^6.1.6",
+    "azure-pipelines-task-lib": "^4.10.0",
+    "google-auth-library": "^9.0.0",
     "securefiles-babel": "file:../Common/securefiles-babel"
   },
-  "babel": {
-    "presets": [
-      [
-        "@babel/preset-env",
-        {
-          "targets": {
-            "node": "6.10"
-          }
-        }
-      ]
-    ],
-    "plugins": [],
-    "env": {
-      "debug": {
-        "sourceMaps": "inline",
-        "retainLines": true
-      }
-    }
-  },
   "devDependencies": {
-    "@babel/cli": "^7.8.4",
-    "@babel/core": "^7.9.6",
-    "@babel/node": "^7.8.7",
-    "@babel/polyfill": "^7.8.7",
-    "@babel/preset-env": "^7.9.6",
-    "babel-eslint": "^10.1.0"
+    "dotenv": "^16.3.0",
+    "mocha": "^10.2.0"
   }
 }

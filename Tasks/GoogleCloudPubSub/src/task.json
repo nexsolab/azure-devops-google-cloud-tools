@@ -452,8 +452,8 @@
   ],
   "minimumAgentVersion": "2.144.0",
   "execution": {
-    "Node10": {
-      "target": "main.js",
+    "Node16": {
+      "target": "dist/main.cjs",
       "argumentFormat": ""
     }
   },
